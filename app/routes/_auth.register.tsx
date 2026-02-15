@@ -13,13 +13,6 @@ export default function Register() {
   return (
     <Form className="space-y-4 dark text-white" method="post">
       <div className="space-y-1">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" placeholder="Email" required />
-        <div className="text-red-500 text-sm dark">
-          {actionData?.fieldErrors.email}
-        </div>
-      </div>
-      <div className="space-y-1">
         <Label htmlFor="username">Username</Label>
         <Input id="username" name="username" placeholder="Username" required />
         <div className="text-red-500 text-sm dark">
@@ -70,7 +63,7 @@ export default function Register() {
 export async function action({ request }: ActionFunctionArgs) {
   try {
     return await authenticator.authenticate("register", request, {
-      successRedirect: "/verify",
+      successRedirect: "/dashboard/index",
     });
   } catch (error) {
     if (error instanceof Response) throw error;

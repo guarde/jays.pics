@@ -9,7 +9,7 @@ import { z } from "zod";
 import { generateInvisibleURL } from "~/lib/utils";
 import { prisma } from "~/services/database.server";
 import { uploadToS3 } from "~/services/s3.server";
-import { getIP } from "~/lib/ip";
+import { getClientIP } from "~/services/session.server";
 
 function isFile(value: unknown): value is File {
   return (
@@ -100,7 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
       uploader_id: user!.id,
       size: image.size,
       type: image.type,
-      uploader_ip: getIP(request) ?? null,
+      uploader_ip: getClientIP(request) ?? null,
     },
   });
 

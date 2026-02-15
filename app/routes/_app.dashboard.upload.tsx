@@ -14,14 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { prisma } from "~/services/database.server";
-import { uploadRateLimit, checkRateLimit } from "~/services/redis.server";
 import { uploadToS3 } from "~/services/s3.server";
 import {
   destroySession,
   getSession,
   getUserBySession,
+  getClientIP,
 } from "~/services/session.server";
-import { getIP } from "~/lib/ip";
 
 const schema = z.object({
   image: z.instanceof(File),
@@ -32,6 +31,16 @@ export async function action({ request }: ActionFunctionArgs) {
   const siteData = await prisma.site.findFirst();
   if (siteData?.is_upload_blocked)
     return json({ success: false, message: "Uploading is currently blocked" });
+  const formData = await request.formData();
+  const payload = Object.fromEntries(formData);
+  const result = schema.safeParse(payload);
+
+  if (!result.success) {
+    return json({ success: false, errors: result.error });
+  }
+
+  const image = result.data.image;
+  const displayName = result.data.display_name ?? image.name;
 
   const url = new URL(request.url);
   const paramEntries = Object.fromEntries(url.searchParams.entries());
@@ -52,26 +61,6 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "You are not authorised",
     });
   }
-
-  const rateLimitResult = await checkRateLimit(uploadRateLimit, user.id);
-
-  if (!rateLimitResult.success) {
-    return json({
-      success: false,
-      message: `Upload limit exceeded. You can upload again at ${rateLimitResult.reset.toLocaleTimeString()}. Remaining: ${rateLimitResult.remaining}/${rateLimitResult.limit} uploads per hour.`,
-    });
-  }
-
-  const formData = await request.formData();
-  const payload = Object.fromEntries(formData);
-  const result = schema.safeParse(payload);
-
-  if (!result.success) {
-    return json({ success: false, errors: result.error });
-  }
-
-  const image = result.data.image;
-  const displayName = result.data.display_name ?? image.name;
 
   if (
     !["image/png", "image/gif", "image/jpeg", "image/webp"].includes(image.type)
@@ -95,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
       uploader_id: user!.id,
       size: image.size,
       type: image.type,
-      uploader_ip: getIP(request) ?? null,
+      uploader_ip: getClientIP(request) ?? null,
     },
   });
 

@@ -1,6 +1,6 @@
-import type { ErrorStatus } from "@prisma/client";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
+import type { ErrorStatus } from "@prisma/client";
 
 import { PAGE_SIZE, Pagination } from "~/components/pagination";
 import { Button } from "~/components/ui/button";
