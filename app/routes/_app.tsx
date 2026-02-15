@@ -9,7 +9,6 @@ import {
   getSession,
   getUserBySession,
 } from "~/services/session.server";
-import { prisma } from "~/services/database.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -35,24 +34,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         "Set-Cookie": await destroySession(session),
       },
     });
-
-  if (!user.email_verified) {
-    const verification = await prisma.verification.findFirst({
-      where: { user_id: user.id },
-      orderBy: { created_at: "desc" },
-    });
-
-    if (
-      verification &&
-      typeof verification.code === "string" &&
-      verification.code.startsWith("jp") &&
-      verification.code.endsWith("ce")
-    ) {
-      return redirect("/verify-email");
-    }
-
-    return redirect("/verify");
-  }
 
   const now = Date.now();
 

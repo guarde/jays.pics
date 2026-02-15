@@ -3,22 +3,6 @@ import { PrismaClient, Progress } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const siteExists = await prisma.site.findFirst();
-  const userExists = await prisma.user.findFirst({
-    where: { username: "System" },
-  });
-  const announcementExists = await prisma.announcement.findFirst({
-    where: { content: "Welcome to jays.pics :)" },
-  });
-  const existingUrls = await prisma.uRL.findFirst({
-    where: { url: "jays.pics" },
-  });
-
-  if (siteExists || userExists || announcementExists || existingUrls) {
-    console.log("already done.");
-    return;
-  }
-
   await prisma.site.create({
     data: {
       id: "",

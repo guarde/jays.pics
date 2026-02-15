@@ -1,27 +1,16 @@
-import {
-  ActionFunctionArgs,
-  json,
-  LoaderFunctionArgs,
-  redirect,
-} from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
-import { Ban } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from '@remix-run/node';
+import { Form, useLoaderData } from '@remix-run/react';
+import { Ban } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
 
-import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { prisma } from "~/services/database.server";
-import { uploadRateLimit, checkRateLimit } from "~/services/redis.server";
-import { uploadToS3 } from "~/services/s3.server";
-import {
-  destroySession,
-  getSession,
-  getUserBySession,
-} from "~/services/session.server";
-import { getIP } from "~/lib/ip";
+import { Button } from '~/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { prisma } from '~/services/database.server';
+import { uploadToS3 } from '~/services/s3.server';
+import { destroySession, getSession, getUserBySession, getClientIP } from '~/services/session.server';
 
 const schema = z.object({
   image: z.instanceof(File),
@@ -30,38 +19,7 @@ const schema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   const siteData = await prisma.site.findFirst();
-  if (siteData?.is_upload_blocked)
-    return json({ success: false, message: "Uploading is currently blocked" });
-
-  const url = new URL(request.url);
-  const paramEntries = Object.fromEntries(url.searchParams.entries());
-
-  if (!paramEntries.upload_key)
-    return json({
-      success: false,
-      message: "Upload key is not set",
-    });
-
-  const user = await prisma.user.findFirst({
-    where: { upload_key: paramEntries.upload_key },
-  });
-
-  if (!user) {
-    return json({
-      success: false,
-      message: "You are not authorised",
-    });
-  }
-
-  const rateLimitResult = await checkRateLimit(uploadRateLimit, user.id);
-
-  if (!rateLimitResult.success) {
-    return json({
-      success: false,
-      message: `Upload limit exceeded. You can upload again at ${rateLimitResult.reset.toLocaleTimeString()}. Remaining: ${rateLimitResult.remaining}/${rateLimitResult.limit} uploads per hour.`,
-    });
-  }
-
+  if (siteData?.is_upload_blocked) return json({ success: false, message: 'Uploading is currently blocked' });
   const formData = await request.formData();
   const payload = Object.fromEntries(formData);
   const result = schema.safeParse(payload);
@@ -73,19 +31,37 @@ export async function action({ request }: ActionFunctionArgs) {
   const image = result.data.image;
   const displayName = result.data.display_name ?? image.name;
 
-  if (
-    !["image/png", "image/gif", "image/jpeg", "image/webp"].includes(image.type)
-  ) {
+  const url = new URL(request.url);
+  const paramEntries = Object.fromEntries(url.searchParams.entries());
+
+  if (!paramEntries.upload_key)
     return json({
       success: false,
-      message: "Incorrect file type",
+      message: 'Upload key is not set',
+    });
+
+  const user = await prisma.user.findFirst({
+    where: { upload_key: paramEntries.upload_key },
+  });
+
+  if (!user) {
+    return json({
+      success: false,
+      message: 'You are not authorised',
+    });
+  }
+
+  if (!['image/png', 'image/gif', 'image/jpeg', 'image/webp'].includes(image.type)) {
+    return json({
+      success: false,
+      message: 'Incorrect file type',
     });
   }
 
   if (user.space_used + BigInt(image.size) > user.max_space) {
     return json({
       success: false,
-      message: "When uploading this image, your allocated space was exceeded.",
+      message: 'When uploading this image, your allocated space was exceeded.',
     });
   }
 
@@ -95,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
       uploader_id: user!.id,
       size: image.size,
       type: image.type,
-      uploader_ip: getIP(request) ?? null,
+      uploader_ip: getClientIP(request) ?? null,
     },
   });
 
@@ -104,28 +80,21 @@ export async function action({ request }: ActionFunctionArgs) {
     data: { space_used: user.space_used + BigInt(image.size) },
   });
 
-  const response = await uploadToS3(
-    result.data.image,
-    `${user.id}/${dbImage.id}`,
-  );
+  const response = await uploadToS3(result.data.image, `${user.id}/${dbImage.id}`);
   if (response?.$metadata.httpStatusCode === 200) {
     const triggers = await prisma.trigger.findMany({
-      where: { user_id: user.id, type: "image_upload" },
+      where: { user_id: user.id, type: 'image_upload' },
       include: { actions: true },
     });
 
     for (const trig of triggers) {
       for (const act of trig.actions) {
-        const actionData = act.data as {
-          url?: string;
-          tag?: string;
-          name?: string;
-        };
-        if (act.type === "webhook" && actionData?.url) {
+        const actionData = act.data as { url?: string; tag?: string; name?: string };
+        if (act.type === 'webhook' && actionData?.url) {
           try {
             await fetch(actionData.url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 imageId: dbImage.id,
                 name: dbImage.display_name,
@@ -133,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
             });
           } catch (_) {}
         }
-        if (act.type === "add_tag" && actionData?.tag) {
+        if (act.type === 'add_tag' && actionData?.tag) {
           const tag = await prisma.tag.upsert({
             where: { user_id_name: { user_id: user.id, name: actionData.tag } },
             update: {},
@@ -147,7 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
             create: { image_id: dbImage.id, tag_id: tag.id },
           });
         }
-        if (act.type === "rename" && actionData?.name) {
+        if (act.type === 'rename' && actionData?.name) {
           await prisma.image.update({
             where: { id: dbImage.id },
             data: { display_name: actionData.name },
@@ -164,16 +133,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const session = await getSession(request.headers.get("Cookie"));
+  const session = await getSession(request.headers.get('Cookie'));
 
-  if (!session.has("userID")) return redirect("/");
+  if (!session.has('userID')) return redirect('/');
 
   const user = await getUserBySession(session);
 
   if (user === null)
-    return redirect("/", {
+    return redirect('/', {
       headers: {
-        "Set-Cookie": await destroySession(session),
+        'Set-Cookie': await destroySession(session),
       },
     });
 
@@ -185,7 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Upload() {
   const { user, uploads_blocked } = useLoaderData<typeof loader>();
   const [preview, setPreview] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -232,7 +201,7 @@ export default function Upload() {
               tabIndex={0}
               onClick={() => fileInputRef.current?.click()}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   fileInputRef.current?.click();
                 }
@@ -240,17 +209,9 @@ export default function Upload() {
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="max-h-48 object-contain mb-2"
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Click or drop image here
-                </p>
-              )}
+              {preview ?
+                <img src={preview} alt="Preview" className="max-h-48 object-contain mb-2" />
+              : <p className="text-sm text-muted-foreground">Click or drop image here</p>}
             </div>
             <input
               title="image"
@@ -272,16 +233,15 @@ export default function Upload() {
                 className="mt-1"
               />
             </div>
-            {uploads_blocked ? (
+            {uploads_blocked ?
               <Button className="w-full bg-destructive hover:bg-destructive text-destructive-foreground">
                 <Ban className="mr-2 h-4 w-4" />
                 Uploading Disabled
               </Button>
-            ) : (
-              <Button type="submit" className="w-full">
+            : <Button type="submit" className="w-full">
                 Upload
               </Button>
-            )}
+            }
           </Form>
         </CardContent>
       </Card>

@@ -20,10 +20,7 @@ import { getSession, getUserBySession } from "~/services/session.server";
 const domainSchema = z.object({
   domain: z
     .string()
-    .regex(
-      /^[a-z0-9-]{1,63}(\.[a-z0-9-]{1,63})+\.[a-z]{2,}$/i,
-      "This domain is invalid.",
-    )
+    .regex(/[a-z-]+\.[a-z]+/i, "This domain is invalid.")
     .optional(),
 });
 
