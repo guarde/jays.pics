@@ -1,5 +1,5 @@
 import { ActionFunctionArgs } from "@remix-run/node";
-import { Form, Link, useActionData } from "@remix-run/react";
+import { Form, useActionData } from "@remix-run/react";
 import { AuthorizationError } from "remix-auth";
 
 import { Button } from "~/components/ui/button";
@@ -26,15 +26,7 @@ export default function Login() {
         </div>
       </div>
       <div className="space-y-1">
-        <div className="flex justify-between">
-          <Label htmlFor="password">Password</Label>
-          <Link
-            className="text-sm text-primary hover:underline"
-            to="/reset-password"
-          >
-            Forgot password?
-          </Link>
-        </div>
+        <Label htmlFor="password">Password</Label>
         <Input
           id="password"
           name="password"

@@ -1,4 +1,3 @@
 */5 * * * * checkNameserver
-0 * * * * cleanVerification
 0 0 * * * cleanDomains
 0 0 * * * dailyStats
