@@ -19,7 +19,7 @@ export async function action({ params }: ActionFunctionArgs) {
   await prisma.user.update({
     where: { id: user!.id },
     data: {
-      space_used: user!.space_used - image!.size,
+      space_used: user!.space_used - BigInt(image!.size),
     },
   });
 
