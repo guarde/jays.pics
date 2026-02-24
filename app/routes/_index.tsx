@@ -268,7 +268,7 @@ export default function Index() {
                 Terms of Service
               </Link>
               <Link
-                to="https://github.com/jeepies/jays.pics"
+                to="https://github.com/guarde/jays.pics"
                 className="text-muted-foreground hover:text-foreground"
               >
                 <FaGithub className="h-4 w-4" />

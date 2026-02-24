@@ -41,7 +41,7 @@ This README assumes you have Docker installed. If you do not, please read [this]
 
 1. Clone the repository with
    ```bash
-   git clone https://github.com/jeepies/jays.pics.git
+   git clone https://github.com/guarde/jays.pics.git
    ```
 2. Enter the cloned repository locally, typically with
    ```bash
@@ -101,8 +101,8 @@ Contributions are welcome! 🥳
 
 ## License
 
-MIT © [jeepies](https://github.com/jeepies)
+MIT © [guarde](https://github.com/guarde)
 
 ---
 
-<p align="center">Made with <img height="14" src="https://emoji.lgbt/assets/svg/gay-heart.svg"/> by jeepies</p>
+<p align="center">Made with <img height="14" src="https://emoji.lgbt/assets/svg/gay-heart.svg"/> by guarde</p>
