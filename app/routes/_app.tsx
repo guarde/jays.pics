@@ -10,9 +10,13 @@ import {
   getUserBySession,
 } from "~/services/session.server";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const siteName = rootData?.siteName ?? "jays.pics";
   return [
-    { title: "Dashboard | jays.pics" },
+    { title: `Dashboard | ${siteName}` },
     { name: "description", content: "Invite-only Image Hosting" },
     {
       name: "theme-color",
@@ -37,18 +41,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const now = Date.now();
 
-  return { user, now, version: process.env.VERSION ?? "0.0.0" };
+  return {
+    user,
+    now,
+    version: process.env.VERSION ?? "0.0.0",
+    siteName: process.env.SITE_NAME ?? "jays.pics",
+  };
 }
 
 export default function Application() {
-  const { user, version } = useLoaderData<typeof loader>();
+  const { user, version, siteName } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row">
-      <DashboardNavbar user={user} version={version} />
+      <DashboardNavbar user={user} version={version} siteName={siteName} />
       <Sidebar
         user={user}
         version={version}
+        siteName={siteName}
         className="border-r hidden md:block"
       />
       <div className="flex-grow rounded w-full h-full overflow-auto">

@@ -8,10 +8,13 @@ import {
   CardContent,
 } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useRootData } from "~/root";
 
 export default function Help() {
   const [reportingActiveTab, setReportingActiveTab] = useState("images");
   const [uploadingActiveTab, setUploadingActiveTab] = useState("onsite");
+  const rootData = useRootData();
+  const siteName = rootData?.siteName ?? "jays.pics";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -30,7 +33,7 @@ export default function Help() {
             <CardHeader>
               <CardTitle>On-Site</CardTitle>
               <CardDescription>
-                How to upload images to jays.pics on-site
+                How to upload images to {siteName} on-site
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -49,7 +52,7 @@ export default function Help() {
             <CardHeader>
               <CardTitle>ShareX</CardTitle>
               <CardDescription>
-                How to set up ShareX to automatically upload to jays.pics
+                How to set up ShareX to automatically upload to {siteName}
               </CardDescription>
             </CardHeader>
             <CardContent>

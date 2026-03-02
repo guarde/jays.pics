@@ -15,11 +15,13 @@ interface DashboardNavbarProps {
     images: any[];
   };
   version: string;
+  siteName: string;
 }
 
 export function DashboardNavbar({
   user,
   version,
+  siteName,
 }: Readonly<DashboardNavbarProps>) {
   const [open, setOpen] = useState(false);
 
@@ -31,7 +33,7 @@ export function DashboardNavbar({
             <Menu className="h-4 w-4" />
           </Button>
           <Link to="/dashboard/index" className="font-bold">
-            jays.pics
+            {siteName}
           </Link>
         </div>
       </header>
@@ -60,6 +62,7 @@ export function DashboardNavbar({
                 onLinkClick={() => setOpen(false)}
                 user={user}
                 version={version}
+                siteName={siteName}
                 className={cn("w-64 border-r bg-background h-full")}
               />
             </motion.div>

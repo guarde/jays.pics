@@ -19,16 +19,19 @@ async function main() {
       },
     },
   });
+  const siteName = process.env.SITE_NAME ?? "jays.pics";
+  const baseDomain = process.env.BASE_DOMAIN ?? "jays.pics";
+
   await prisma.announcement.create({
     data: {
-      content: "Welcome to jays.pics :)",
+      content: `Welcome to ${siteName} :)`,
     },
   });
   await prisma.uRL.createMany({
     data: [
       {
         donator_id: system.id,
-        url: "jays.pics",
+        url: baseDomain,
         public: true,
         progress: Progress.DONE,
         zone_id: "5f5f3dc3d3fbafdfb3ee296d6ff22f03",

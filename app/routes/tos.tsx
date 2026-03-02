@@ -1,6 +1,12 @@
 import { Link } from "@remix-run/react";
 
+import { useRootData } from "~/root";
+
 export default function TOS() {
+  const rootData = useRootData();
+  const siteName = rootData?.siteName ?? "jays.pics";
+  const baseDomain = rootData?.baseDomain ?? "jays.pics";
+
   return (
     <div className="flex min-h-screen flex-col items-center bg-background dark text-white p-6 space-y-2">
       <h1 className="text-2xl font-bold mb-4">Terms of Service</h1>
@@ -12,7 +18,7 @@ export default function TOS() {
         Do not upload content that you do not have the rights to share.
       </p>
       <p className="mb-2">
-        jays.pics acts solely as a host. You are fully responsible for anything
+        {siteName} acts solely as a host. You are fully responsible for anything
         you upload.
       </p>
       <p className="mb-2">
@@ -21,7 +27,7 @@ export default function TOS() {
       </p>
       <p className="mb-2">
         If you believe content infringes your copyright, send a DMCA notice to{" "}
-        <Link to={"mailto:admin@jays.pics"}>admin@jays.pics</Link>.
+        <Link to={`mailto:admin@${baseDomain}`}>admin@{baseDomain}</Link>.
       </p>
       <p className="mb-2">
         We may remove content or suspend accounts at our discretion if we become

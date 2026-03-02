@@ -22,6 +22,7 @@ import { prisma } from "~/services/database.server";
 import { getSession, getUserBySession } from "~/services/session.server";
 
 import { useAppLoaderData } from "../_app";
+import { useRootData } from "~/root";
 
 const embedUpdateSchema = z.object({
   embed_title: z.string(),
@@ -68,6 +69,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function Embed() {
   const data = useAppLoaderData();
+  const rootData = useRootData();
+  const siteName = rootData?.siteName ?? "jays.pics";
+  const baseDomain = rootData?.baseDomain ?? "jays.pics";
   const fetcher = useFetcher();
   const { showToast } = useToast();
   const [title, setTitle] = useState(
@@ -84,11 +88,11 @@ export default function Embed() {
   );
   const [url, setUrl] = useState(
     useDomainHack
-      ? "https://jays.pics/"
-      : "https://jays.pics/i/cmbzo760j000fk5lbk3gr7hpg",
+      ? `https://${baseDomain}/`
+      : `https://${baseDomain}/i/cmbzo760j000fk5lbk3gr7hpg`,
   );
   const [templates, setTemplates] = useState<Record<string, string>>({});
-  const footer = "Hosted with 🩵 at jays.pics";
+  const footer = `Hosted with 🩵 at ${siteName}`;
 
   const TEMPLATE_EXAMPLES: Record<string, string> = {
     "image.name": "Image.png",
@@ -119,9 +123,9 @@ export default function Embed() {
   }, []);
 
   useEffect(() => {
-    if (useDomainHack) setUrl("https://jays.pics/");
-    else setUrl("https://jays.pics/i/cmbzo760j000fk5lbk3gr7hpg");
-  }, [useDomainHack]);
+    if (useDomainHack) setUrl(`https://${baseDomain}/`);
+    else setUrl(`https://${baseDomain}/i/cmbzo760j000fk5lbk3gr7hpg`);
+  }, [useDomainHack, baseDomain]);
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">

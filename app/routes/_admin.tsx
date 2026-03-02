@@ -9,9 +9,13 @@ import {
   getUserBySession,
 } from "~/services/session.server";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const siteName = rootData?.siteName ?? "jays.pics";
   return [
-    { title: "Admin Dashboard | jays.pics" },
+    { title: `Admin Dashboard | ${siteName}` },
     { name: "description", content: "Administration Dashboard" },
     {
       name: "theme-color",
@@ -36,16 +40,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     });
 
-  return user;
+  return { user, siteName: process.env.SITE_NAME ?? "jays.pics" };
 }
 
 export default function AdminDashboard() {
-  const user = useLoaderData<typeof loader>();
+  const { user, siteName } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row">
-      <AdminNavbar user={user} />
-      <SidebarAdmin user={user} className="border-r hidden md:block" />
+      <AdminNavbar user={user} siteName={siteName} />
+      <SidebarAdmin
+        user={user}
+        siteName={siteName}
+        className="border-r hidden md:block"
+      />
       <div className="flex-grow rounded w-full h-full overflow-auto">
         <div className="container mx-auto px-4 py-8">
           <Outlet />

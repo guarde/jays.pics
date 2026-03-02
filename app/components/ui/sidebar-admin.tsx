@@ -30,16 +30,22 @@ interface SidebarProps {
     images: any[];
     is_admin: boolean;
   };
+  siteName: string;
   onLinkClick?: () => void;
 }
 
-export function SidebarAdmin({ className, user, onLinkClick }: SidebarProps) {
+export function SidebarAdmin({
+  className,
+  user,
+  siteName,
+  onLinkClick,
+}: SidebarProps) {
   return (
     <div className={cn("pb-12 w-64 relative", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            jays.pics - Admin
+            {siteName} - Admin
           </h2>
           <Separator className="my-4" />
           <div className="space-y-1">
