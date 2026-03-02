@@ -1,0 +1,66 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    # Only deploy on pushes to main (not PRs)
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -e
+            cd /var/www/jays.pics
+
+            # Pull latest code
+            git fetch --all
+            git reset --hard origin/main
+
+            # Install dependencies
+            npm ci
+
+            # Regenerate Prisma client and build
+            npx prisma generate
+            npm run build
+
+            # Run any pending DB migrations
+            npx prisma migrate deploy
+
+            # Reload web server with zero downtime (cluster mode)
+            pm2 reload jays-web --update-env
+
+            # Restart background worker (brief downtime is fine for a job queue)
+            pm2 restart jays-worker --update-env
