@@ -39,6 +39,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       },
     });
 
+  if (user.discord_pending) return redirect("/discord/activate");
+
   const now = Date.now();
 
   return {

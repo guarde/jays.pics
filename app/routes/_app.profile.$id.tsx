@@ -6,7 +6,7 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useLoaderData, useFetcher } from "@remix-run/react";
-import { Calendar, ImageIcon, Users, X } from "lucide-react";
+import { Calendar, ImageIcon, MessageCircle, Users, X } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "~/components/confirm-dialog";
@@ -18,6 +18,11 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { prisma } from "~/services/database.server";
+import {
+  getDiscordAvatarUrl,
+  getDiscordBannerUrl,
+  getDiscordDecorationUrl,
+} from "~/services/discord";
 import {
   getAllReferrals,
   getSession,
@@ -36,6 +41,7 @@ async function findProfileUser(slug: string) {
       referrer_profile: true,
       pinned_images: true,
       avatar_url: true,
+      discord_profile: true,
     },
   });
 }
@@ -203,6 +209,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(`/profile/${params.id}`);
 }
 
+function DiscordIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className ?? "w-4 h-4"}
+    >
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+    </svg>
+  );
+}
+
 export default function Profile() {
   const { user, viewer, referrals, images, comments, pinnedImages } =
     useLoaderData<typeof loader>();
@@ -215,16 +233,48 @@ export default function Profile() {
   const initials = user.username.slice(0, 2).toUpperCase();
   const badges: { text: string; colour: string }[] = JSON.parse(user.badges);
 
+  const discord = user.discord_profile;
+
+  // Resolve avatar URL
+  const avatarSrc =
+    discord?.use_avatar && discord.discord_avatar
+      ? getDiscordAvatarUrl(discord.discord_id, discord.discord_avatar)
+      : user.avatar_url
+        ? `/avatar/${user.id}`
+        : `https://api.dicebear.com/6.x/initials/svg?seed=${user.username}`;
+
+  // Resolve banner
+  const discordBannerUrl =
+    discord?.use_banner && discord.discord_banner
+      ? getDiscordBannerUrl(discord.discord_id, discord.discord_banner)
+      : null;
+
+  // Resolve decoration
+  const decorationUrl =
+    discord?.use_decoration && discord.discord_avatar_decoration
+      ? getDiscordDecorationUrl(discord.discord_avatar_decoration)
+      : null;
+
   return (
     <main className="flex-1 overflow-y-auto">
       <div className="p-8 space-y-5">
         {/* Banner + avatar wrapper */}
         <div className="relative">
           <div className="h-48 rounded-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700" />
-            <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-white/5" />
-            <div className="absolute top-8 right-40 w-32 h-32 rounded-full bg-white/5" />
-            <div className="absolute -bottom-16 left-1/3 w-72 h-72 rounded-full bg-black/10" />
+            {discordBannerUrl ? (
+              <img
+                src={discordBannerUrl}
+                alt="Discord banner"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-indigo-700" />
+                <div className="absolute -top-10 -right-10 w-56 h-56 rounded-full bg-white/5" />
+                <div className="absolute top-8 right-40 w-32 h-32 rounded-full bg-white/5" />
+                <div className="absolute -bottom-16 left-1/3 w-72 h-72 rounded-full bg-black/10" />
+              </>
+            )}
 
             {/* Stats — bottom left of banner */}
             <div className="absolute bottom-6 left-6 flex items-end gap-8">
@@ -250,19 +300,23 @@ export default function Profile() {
 
           {/* Avatar — half below the banner */}
           <div className="absolute bottom-0 right-6 translate-y-1/2 z-10">
-            <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl">
-              <AvatarImage
-                src={
-                  user.avatar_url
-                    ? `/avatar/${user.id}`
-                    : `https://api.dicebear.com/6.x/initials/svg?seed=${user.username}`
-                }
-                alt={user.username}
-              />
-              <AvatarFallback className="text-2xl font-bold bg-primary/20 text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl">
+                <AvatarImage src={avatarSrc} alt={user.username} />
+                <AvatarFallback className="text-2xl font-bold bg-primary/20 text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {/* Discord decoration overlay */}
+              {decorationUrl && (
+                <img
+                  src={decorationUrl}
+                  alt="Discord decoration"
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{ transform: "scale(1.35)" }}
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -270,11 +324,20 @@ export default function Profile() {
         <div className="pt-10 pb-5 border-b border-border flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">{user.username}</h1>
-            <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>
+            <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
                 Joined {new Date(user.created_at).toLocaleDateString()}
               </span>
+              {discord?.display_public && (
+                <span
+                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full text-white"
+                  style={{ backgroundColor: "#5865F2" }}
+                >
+                  <DiscordIcon className="h-3 w-3" />
+                  {discord.discord_username}
+                </span>
+              )}
             </div>
           </div>
           {badges.length > 0 && (
@@ -322,6 +385,12 @@ export default function Profile() {
                     {referrals.length !== 1 ? "s" : ""}
                   </span>
                 </div>
+                {discord?.display_public && (
+                  <div className="flex items-center gap-2.5">
+                    <DiscordIcon className="h-4 w-4 text-primary/70 shrink-0" />
+                    <span>{discord.discord_username}</span>
+                  </div>
+                )}
               </div>
             </div>
 

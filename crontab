@@ -1,3 +1,4 @@
 */5 * * * * checkNameserver
 0 0 * * * cleanDomains
 0 0 * * * dailyStats
+0 */1 * * * cleanPendingDiscord

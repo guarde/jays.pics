@@ -39,6 +39,8 @@ export async function getUserBySession(session: Session) {
       pinned_images: true,
       avatar_url: true,
       email: true,
+      discord_pending: true,
+      discord_profile: true,
       StorageSubscription: true,
       notifications: {
         where: {
