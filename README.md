@@ -92,7 +92,7 @@ This README assumes you have Docker installed. If you do not, please read [this]
 
 ## Contributing
 
-Contributions are welcome! 🥳
+Contributions are welcome
 
 1. Fork the repository.
 2. Create a new branch for your feature or bugfix.
