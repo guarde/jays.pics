@@ -4,6 +4,7 @@ import {
   Bell,
   BellDotIcon,
   CircleX,
+  DollarSign,
   Globe2,
   Hammer,
   HardDrive,
@@ -129,6 +130,17 @@ export function SidebarAdmin({ className, user, onLinkClick }: SidebarProps) {
               <Link to="/admin/site">
                 <PanelsTopLeft className="mr-2 h-4 w-4" />
                 Site
+              </Link>
+            </Button>
+            <Button
+              onClick={onLinkClick}
+              asChild
+              variant="ghost"
+              className="w-full justify-start text-gray-900 dark:text-gray-100"
+            >
+              <Link to="/admin/aws-pricing">
+                <DollarSign className="mr-2 h-4 w-4" />
+                AWS Pricing
               </Link>
             </Button>
           </div>
