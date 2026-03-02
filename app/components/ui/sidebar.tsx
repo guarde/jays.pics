@@ -39,6 +39,7 @@ interface SidebarProps {
     images: any[];
   };
   version: string;
+  siteName: string;
   onLinkClick?: () => void;
 }
 
@@ -46,6 +47,7 @@ export function Sidebar({
   className,
   user,
   version,
+  siteName,
   onLinkClick,
 }: Readonly<SidebarProps>) {
   const [showTray, setShowTray] = useState(false);
@@ -67,7 +69,7 @@ export function Sidebar({
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            jays.pics
+            {siteName}
             {!user.notifications || user.notifications.length === 0 ? (
               <Bell
                 className="float-right w-4 m-1 cursor-pointer"

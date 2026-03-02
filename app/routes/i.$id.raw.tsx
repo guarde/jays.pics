@@ -4,9 +4,13 @@ import sharp from "sharp";
 import { prisma } from "~/services/database.server";
 import { get } from "~/services/s3.server";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const siteName = rootData?.siteName ?? "jays.pics";
   return [
-    { title: "Image | jays.pics" },
+    { title: `Image | ${siteName}` },
     { name: "description", content: "Image" },
     {
       name: "theme-color",

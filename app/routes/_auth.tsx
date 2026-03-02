@@ -4,9 +4,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { redirectIfUser } from "~/services/auth.server";
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const siteName = rootData?.siteName ?? "jays.pics";
   return [
-    { title: "Authorization | jays.pics" },
+    { title: `Authorization | ${siteName}` },
     { name: "description", content: "Invite-only Image Hosting" },
   ];
 };

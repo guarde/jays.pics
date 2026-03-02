@@ -58,12 +58,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   const uploader = uploaderData
-  ? {
-      ...uploaderData,
-      space_used: Number(uploaderData.space_used),
-      max_space: Number(uploaderData.max_space),
-    }
-  : null;
+    ? {
+        ...uploaderData,
+        space_used: Number(uploaderData.space_used),
+        max_space: Number(uploaderData.max_space),
+      }
+    : null;
 
   const comments = await prisma.imageComment.findMany({
     where: { image_id: params.id },
@@ -105,6 +105,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     comments,
     tags: image.tags.map((t) => t.tag),
     version: process.env.VERSION ?? "0.0.0",
+    siteName: process.env.SITE_NAME ?? "jays.pics",
+    baseDomain: process.env.BASE_DOMAIN ?? "jays.pics",
   };
 }
 
@@ -222,7 +224,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function Image() {
-  const { data, user, comments, tags, version } =
+  const { data, user, comments, tags, version, siteName } =
     useLoaderData<typeof loader>();
   const [editingName, setEditingName] = useState(false);
   const fetcher = useFetcher();
@@ -240,6 +242,7 @@ export default function Image() {
             images: user!.images,
           }}
           version={version}
+          siteName={siteName}
           className="border-r"
         />
       ) : (
@@ -451,9 +454,15 @@ export default function Image() {
   );
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data) return [{ title: `Image | jays.pics ` }];
+export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const fallbackSiteName = rootData?.siteName ?? "jays.pics";
 
+  if (!data) return [{ title: `Image | ${fallbackSiteName}` }];
+
+  const { siteName, baseDomain } = data;
   const dictionary = {
     "image.name": data.data.image?.display_name,
     "image.size_bytes": data.data.image?.size,
@@ -479,11 +488,11 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: "og:type", content: "website" },
     {
       property: "og:url",
-      content: `https://jays.pics/i/${data.data.image?.id}`,
+      content: `https://${baseDomain}/i/${data.data.image?.id}`,
     },
     {
       property: "og:image",
-      content: `https://jays.pics/i/${data.data.image?.id}/raw${data.data.image.type === "image/gif" ? ".gif" : ""}`,
+      content: `https://${baseDomain}/i/${data.data.image?.id}/raw${data.data.image.type === "image/gif" ? ".gif" : ""}`,
     },
     {
       name: "theme-color",
@@ -492,7 +501,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     {
       tagName: "link",
       type: "application/json+oembed",
-      href: `https://jays.pics/i/${data.data.image!.id}/oembed.json`,
+      href: `https://${baseDomain}/i/${data.data.image!.id}/oembed.json`,
     },
     { name: "twitter:card", content: "summary_large_image" },
   ];

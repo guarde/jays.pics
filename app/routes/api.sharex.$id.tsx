@@ -12,9 +12,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
     });
   }
 
+  const siteName = process.env.SITE_NAME ?? "jays.pics";
+  const baseDomain = process.env.BASE_DOMAIN ?? "jays.pics";
+
   const config = {
     Version: "16.1.0",
-    Name: "jays.pics",
+    Name: siteName,
     DestinationType: "ImageUploader, FileUploader",
     RequestMethod: "POST",
     Parameters: {
@@ -22,7 +25,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     },
     Body: "MultipartFormData",
     FileFormName: "image",
-    RequestURL: "https://jays.pics/upload",
+    RequestURL: `https://${baseDomain}/upload`,
     URL: "{json:url}",
     ErrorMessage: "{json:message}",
   };

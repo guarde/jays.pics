@@ -12,16 +12,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
     });
   }
 
+  const siteName = process.env.SITE_NAME ?? "jays.pics";
+  const baseDomain = process.env.BASE_DOMAIN ?? "jays.pics";
+
   const config = {
-    DefaultImageUploader: "jays.pics",
-    DefaultUrlShortener: "jays.pics",
-    DefaultFileUploader: "jays.pics",
+    DefaultImageUploader: siteName,
+    DefaultUrlShortener: siteName,
+    DefaultFileUploader: siteName,
     ClipboardTime: 5,
     Services: [
       {
-        Name: "jays.pics",
+        Name: siteName,
         RequestType: "POST",
-        RequestURL: `https://jays.pics/upload?upload_key=${user.upload_key}`,
+        RequestURL: `https://${baseDomain}/upload?upload_key=${user.upload_key}`,
         FileFormName: "image",
         ResponseType: "Text",
         URL: "$json.url$",

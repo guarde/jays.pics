@@ -16,6 +16,7 @@ import { FaGithub } from "react-icons/fa";
 
 import uploadIllustration from "~/assets/uploadIllustration.svg";
 import { Navbar } from "~/components/navbar";
+import { useRootData } from "~/root";
 import AnimatedGradientText from "~/components/ui/animated-gradient-text";
 import { Button } from "~/components/ui/button";
 import FlickeringGrid from "~/components/ui/flickering-grid";
@@ -51,6 +52,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Index() {
   const { imageTotal, userTotal, storageTotal, domainsTotal } =
     useLoaderData<typeof loader>();
+  const rootData = useRootData();
+  const siteName = rootData?.siteName ?? "jays.pics";
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-background dark">
@@ -66,16 +69,16 @@ export default function Index() {
                     `inline animate-gradient bg-gradient-to-r from-primary via-secondary to-primary bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent`,
                   )}
                 >
-                  jays.pics v2
+                  {siteName} v2
                 </span>
                 {/* <ChevronRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" /> */}
               </AnimatedGradientText>
               <p className="text-[3.5rem] font-semibold text-left text-white">
-                jays<span className="text-primary">.</span>pics
+                {siteName}
               </p>
 
               <h2 className="mt-[.5rem] text-[1rem] leading-relaxed max-w-md text-left text-white">
-                Say goodbye to complicated image hosting. jays.pics gives you a
+                Say goodbye to complicated image hosting. {siteName} gives you a
                 streamlined platform to store and share your files, with
                 enterprise-grade security and lightning-fast delivery on your
                 images.
@@ -228,9 +231,9 @@ export default function Index() {
             </div>
             <div className="border-x border-t grid grid-cols-1 sm:grid-cols-3">
               <div className="flex flex-col items-center justify-center space-y-2 p-8 border-r">
-                <h3 className="font-semibold text-lg">What is jays.pics?</h3>
+                <h3 className="font-semibold text-lg">What is {siteName}?</h3>
                 <p className="text-sm text-muted-foreground text-center">
-                  jays.pics is a modern image hosting platform focused on
+                  {siteName} is a modern image hosting platform focused on
                   simplicity and speed.
                 </p>
               </div>
@@ -258,7 +261,7 @@ export default function Index() {
         <div className="container mx-auto text-white">
           <div className="flex items-center justify-between p-4">
             <div className="text-sm text-muted-foreground">
-              © 2025 jays.pics. All rights reserved.
+              © 2025 {siteName}. All rights reserved.
             </div>
             <div className="flex items-center space-x-4">
               <Link

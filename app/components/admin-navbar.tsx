@@ -16,9 +16,13 @@ interface DashboardNavbarProps {
     notifications: { id: string; content: string; created_at: string }[];
     images: any[];
   };
+  siteName: string;
 }
 
-export function AdminNavbar({ user }: Readonly<DashboardNavbarProps>) {
+export function AdminNavbar({
+  user,
+  siteName,
+}: Readonly<DashboardNavbarProps>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,7 +33,7 @@ export function AdminNavbar({ user }: Readonly<DashboardNavbarProps>) {
             <Menu className="h-4 w-4" />
           </Button>
           <Link to="/dashboard/index" className="font-bold">
-            jays.pics - Admin
+            {siteName} - Admin
           </Link>
         </div>
       </header>
@@ -57,6 +61,7 @@ export function AdminNavbar({ user }: Readonly<DashboardNavbarProps>) {
               <SidebarAdmin
                 onLinkClick={() => setOpen(false)}
                 user={user}
+                siteName={siteName}
                 className={cn("w-64 border-r bg-background h-full")}
               />
             </motion.div>

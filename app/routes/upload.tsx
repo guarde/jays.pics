@@ -22,9 +22,13 @@ const schema = z.object({
   image: z.custom<File>(isFile, "Input not instance of File"),
 });
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ matches }) => {
+  const rootData = matches.find((m) => m.id === "root")?.data as
+    | { siteName?: string }
+    | undefined;
+  const siteName = rootData?.siteName ?? "jays.pics";
   return [
-    { title: "Upload | jays.pics" },
+    { title: `Upload | ${siteName}` },
     { name: "description", content: "Administration Dashboard" },
     {
       name: "theme-color",

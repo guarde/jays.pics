@@ -139,7 +139,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const selectedDomains = Object.keys(JSON.parse(result.data.selected));
     let selected = selectedDomains;
 
-    if (selected.length === 0) selected = ["jays.pics"];
+    if (selected.length === 0)
+      selected = [process.env.BASE_DOMAIN ?? "jays.pics"];
 
     const subdomains: Record<string, string> = {};
     for (const domain of selectedDomains) {
