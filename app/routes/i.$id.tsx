@@ -586,11 +586,11 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
     { property: "og:type", content: "website" },
     {
       property: "og:url",
-      content: `https://${baseDomain}/i/${data.data.image?.id}`,
+      content: `https://webp.gay/i/${data.data.image?.id}`,
     },
     {
       property: "og:image",
-      content: `https://${baseDomain}/i/${data.data.image?.id}/raw${data.data.image.type === "image/gif" ? ".gif" : ""}`,
+      content: `https://webp.gay/i/${data.data.image?.id}/raw${data.data.image.type === "image/gif" ? ".gif" : ""}`,
     },
     {
       name: "theme-color",
@@ -600,7 +600,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
       tagName: "link",
       rel: "alternate",
       type: "application/json+oembed",
-      href: `https://${baseDomain}/i/${data.data.image!.id}/oembed.json`,
+      href: `https://webp.gay/i/${data.data.image!.id}/oembed.json`,
     },
     { name: "twitter:card", content: "summary_large_image" },
   ];
