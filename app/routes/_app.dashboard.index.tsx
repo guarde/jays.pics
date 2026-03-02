@@ -1,17 +1,18 @@
 import { LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { Ban, Link as LinkIcon, Plus, Upload } from "lucide-react";
+import {
+  Ban,
+  ExternalLink,
+  HardDrive,
+  ImageIcon,
+  Link as LinkIcon,
+  Plus,
+  Upload,
+  Users,
+} from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
-import {
-  CartesianGrid,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  LineChart,
-} from "recharts";
 
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -111,155 +112,189 @@ export default function Dashboard() {
     setTotalStorage(calculatedStorage);
   }, [user.images]);
 
+  const activeImages = images.filter((img) => !img.deleted_at);
+  const storagePercent = Math.min((totalStorage / storageLimit) * 100, 100);
+  const recentImages = images.slice(Math.max(images.length - 15, 0)).reverse();
+
   return (
-    <div className="flex h-screen">
-      <main className="flex-1 p-8 overflow-y-auto">
-        <h1 className="text-2xl font-bold py-2">
-          Welcome, <span className="text-primary">{user.username}</span>!
-        </h1>
+    <main className="flex-1 overflow-y-auto">
+      {/* Header bar */}
+      <div className="border-b border-border px-8 py-5 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">
+            Welcome back,{" "}
+            <span className="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+              {user.username}
+            </span>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {activeImages.length} image{activeImages.length !== 1 ? "s" : ""}{" "}
+            uploaded
+          </p>
+        </div>
+        {siteData?.is_upload_blocked ? (
+          <Button variant="destructive" size="sm" className="gap-2" disabled>
+            <Ban className="h-4 w-4" />
+            Uploading Disabled
+          </Button>
+        ) : (
+          <Button asChild size="sm" className="gap-2 text-white">
+            <Link to="/dashboard/upload">
+              <Upload className="h-4 w-4" />
+              Upload
+            </Link>
+          </Button>
+        )}
+      </div>
 
-        <Card className="my-6">
-          <CardHeader>
-            <CardTitle>Announcement</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Markdown>{announcement[0].content}</Markdown>
-          </CardContent>
-        </Card>
+      <div className="p-8 space-y-8">
+        {/* Announcement */}
+        {announcement[0] && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 px-5 py-4">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1.5">
+              Announcement
+            </p>
+            <div className="text-sm text-foreground prose prose-sm dark:prose-invert max-w-none">
+              <Markdown>{announcement[0].content}</Markdown>
+            </div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Images
-              </CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" />
-                <path d="M3 5v14a2 2 0 0 0 2 2h16" />
-                <path d="m18 15 3 3-3 3" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{images.length}</div>
-              <p className="text-xs text-muted-foreground">Lifetime uploads</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Storage Used
-              </CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {prettyBytes(totalStorage)}
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Total Images
+                  </p>
+                  <p className="text-3xl font-bold">{images.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {activeImages.length} active
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <ImageIcon className="h-5 w-5 text-primary" />
+                </div>
               </div>
-              <Progress
-                value={(totalStorage / storageLimit) * 100}
-                className="mt-2"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                {((totalStorage / storageLimit) * 100).toFixed(2)}% of{" "}
-                {prettyBytes(storageLimit)} limit
-              </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Active Referrals
-              </CardTitle>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{referrals.length}</div>
-              <p className="text-xs text-muted-foreground">Total referrals</p>
+
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Storage Used
+                  </p>
+                  <p className="text-3xl font-bold">
+                    {prettyBytes(totalStorage)}
+                  </p>
+                  <Progress value={storagePercent} className="mt-2 h-1.5" />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {storagePercent.toFixed(1)}% of {prettyBytes(storageLimit)}
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
+                  <HardDrive className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Referrals
+                  </p>
+                  <p className="text-3xl font-bold">{referrals.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total referred users
+                  </p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Recent Uploads</h2>
-          {siteData?.is_upload_blocked ? (
-            <Button className="bg-destructive hover:bg-destructive text-destructive-foreground">
-              <Ban className="mr-2 h-4 w-4" />
-              Uploading Disabled
-            </Button>
-          ) : (
-            <Button asChild>
-              <Link to="/dashboard/upload">
-                <Upload className="mr-2 h-4 w-4" /> Upload New Image
+
+        {/* Recent Uploads */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Recent Uploads</h2>
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/dashboard/images">
+                <Plus className="h-3.5 w-3.5" />
+                View all
               </Link>
             </Button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {images
-            .slice(Math.max(images.length - 15, 0))
-            .reverse()
-            .map((image) => {
-              return (
-                <Card key={image.id}>
-                  <CardContent className="p-2">
+          </div>
+
+          {recentImages.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border flex flex-col items-center justify-center py-16 text-center">
+              <ImageIcon className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">
+                No uploads yet
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Upload your first image to get started
+              </p>
+              <Button asChild size="sm" className="mt-4 gap-2 text-white">
+                <Link to="/dashboard/upload">
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload image
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {recentImages.map((image) => (
+                <div
+                  key={image.id}
+                  className="group relative rounded-lg overflow-hidden border border-border bg-card hover:border-primary/40 transition-all duration-200"
+                >
+                  <div className="aspect-square overflow-hidden bg-muted">
                     <img
                       src={`/i/${image.id}/raw`}
-                      alt="Image"
-                      className="w-full h-24 object-cover rounded-md"
+                      alt={image.display_name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <p className="mt-2 text-sm font-medium truncate">
-                      <a href={`/i/${image.id}`}>{image.display_name}</a>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(image.created_at).toLocaleDateString()}
-                    </p>
-                    <Link to={`?generate_link=${image.id}`}>
-                      <LinkIcon className="text-sm"></LinkIcon>
-                    </Link>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+                    <div className="w-full p-2 flex items-center justify-between gap-1">
+                      <p className="text-xs text-white font-medium truncate flex-1">
+                        {image.display_name}
+                      </p>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <a
+                          href={`/i/${image.id}`}
+                          title="View image"
+                          className="p-1 rounded bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <Link
+                          to={`?generate_link=${image.id}`}
+                          title="Copy link"
+                          className="p-1 rounded bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        >
+                          <LinkIcon className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <Button asChild className="mt-6" variant="outline">
-          <Link to="/dashboard/images">
-            <Plus className="mr-2 h-4 w-4" /> View All Images
-          </Link>
-        </Button>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

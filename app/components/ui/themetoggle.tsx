@@ -32,16 +32,16 @@ export function ThemeToggle() {
     <Button
       onClick={toggleTheme}
       variant="ghost"
-      className="w-full justify-start"
+      className="w-full justify-start px-3 gap-3 text-muted-foreground hover:text-foreground hover:bg-accent/50"
     >
       {theme === "dark" ? (
         <>
-          <Sun className="mr-2 h-4 w-4" />
+          <Sun className="h-4 w-4 shrink-0" />
           Light Mode
         </>
       ) : (
         <>
-          <Moon className="mr-2 h-4 w-4" />
+          <Moon className="h-4 w-4 shrink-0" />
           Dark Mode
         </>
       )}

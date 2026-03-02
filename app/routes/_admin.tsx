@@ -52,9 +52,9 @@ export default function AdminDashboard() {
       <SidebarAdmin
         user={user}
         siteName={siteName}
-        className="border-r hidden md:block"
+        className="border-r hidden md:flex"
       />
-      <div className="flex-grow rounded w-full h-full overflow-auto">
+      <div className="flex-grow w-full h-full overflow-auto">
         <div className="container mx-auto px-4 py-8">
           <Outlet />
         </div>

@@ -11,6 +11,7 @@ import {
   useFetcher,
   useLoaderData,
 } from "@remix-run/react";
+import { Calendar, FileType, HardDrive, Pencil, Tag, X } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { useState } from "react";
 import { z } from "zod";
@@ -21,13 +22,6 @@ import { useToast } from "~/components/toast";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Sidebar } from "~/components/ui/sidebar";
 import { SidebarGuest } from "~/components/ui/sidebar-guest";
@@ -54,6 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       upload_preferences: true,
       space_used: true,
       max_space: true,
+      avatar_url: true,
     },
   });
 
@@ -223,7 +218,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   return redirect(`/i/${params.id}`);
 }
 
-export default function Image() {
+export default function ImagePage() {
   const { data, user, comments, tags, version, siteName } =
     useLoaderData<typeof loader>();
   const [editingName, setEditingName] = useState(false);
@@ -231,9 +226,13 @@ export default function Image() {
   const { showToast } = useToast();
   const [commentList, setCommentList] = useState(comments);
 
+  const isOwner = user!.id === data.image.uploader_id;
+  const isLoggedIn = user!.id !== "";
+
   return (
     <div className="flex h-screen overflow-hidden">
-      {user!.id !== "" ? (
+      {/* Sidebar */}
+      {isLoggedIn ? (
         <Sidebar
           user={{
             username: user!.username,
@@ -243,16 +242,29 @@ export default function Image() {
           }}
           version={version}
           siteName={siteName}
-          className="border-r"
+          className="border-r hidden md:flex"
         />
       ) : (
-        <SidebarGuest className="border-r" />
+        <SidebarGuest className="border-r hidden md:block" />
       )}
-      <div className="flex flex-1 overflow-auto p-4 gap-4">
-        <div className="flex w-full max-w-md flex-col space-y-4">
-          <Card>
-            <CardHeader>
-              {editingName && user!.id === data.image.uploader_id ? (
+
+      {/* Main layout */}
+      <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
+        {/* Image area — dark background makes any image pop */}
+        <div className="flex-1 flex items-center justify-center bg-zinc-950 min-h-[40vh] lg:min-h-0 overflow-hidden">
+          <img
+            src={`/i/${data.image.id}/raw`}
+            alt={data.image.display_name}
+            className="max-h-full max-w-full object-contain drop-shadow-2xl"
+          />
+        </div>
+
+        {/* Info panel */}
+        <div className="w-full lg:w-96 shrink-0 border-t lg:border-t-0 lg:border-l bg-background flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
+            {/* Name / title */}
+            <div className="px-5 py-4 border-b border-border">
+              {editingName && isOwner ? (
                 <Form
                   method="POST"
                   className="flex gap-2"
@@ -266,93 +278,173 @@ export default function Image() {
                   <Input
                     name="display_name"
                     defaultValue={data.image.display_name}
-                    className="flex-1"
+                    className="flex-1 h-8 text-sm"
+                    autoFocus
                   />
-                  <Button type="submit" size="sm">
+                  <Button type="submit" size="sm" className="h-8">
                     Save
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
+                    className="h-8"
                     onClick={() => setEditingName(false)}
                   >
                     Cancel
                   </Button>
                 </Form>
               ) : (
-                <CardTitle
-                  onClick={() => {
-                    if (user!.id === data.image.uploader_id)
-                      setEditingName(true);
-                  }}
-                  className={
-                    user!.id === data.image.uploader_id ? "cursor-pointer" : ""
-                  }
-                >
-                  {data.image.display_name}
-                </CardTitle>
+                <div className="flex items-start gap-2">
+                  <h1
+                    className="flex-1 min-w-0 text-base font-semibold leading-snug truncate"
+                    title={data.image.display_name}
+                  >
+                    {data.image.display_name}
+                  </h1>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingName(true)}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors shrink-0 mt-0.5"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               )}
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <p>Uploaded by {data.uploader?.username}</p>
-              <p>
-                Uploaded on{" "}
-                {new Date(data.image.created_at).toLocaleDateString()}
-              </p>
+            </div>
+
+            {/* Uploader */}
+            {data.uploader && (
+              <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+                <Avatar className="h-9 w-9 shrink-0">
+                  <AvatarImage
+                    src={
+                      data.uploader.avatar_url
+                        ? `/avatar/${data.image.uploader_id}`
+                        : `https://api.dicebear.com/6.x/initials/svg?seed=${data.uploader.username}`
+                    }
+                    alt={data.uploader.username}
+                  />
+                  <AvatarFallback>
+                    {data.uploader.username.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">
+                    {data.uploader.username}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Uploader</p>
+                </div>
+              </div>
+            )}
+
+            {/* File info */}
+            <div className="px-5 py-4 border-b border-border grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Uploaded</p>
+                  <p className="text-sm font-medium">
+                    {new Date(data.image.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <HardDrive className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Size</p>
+                  <p className="text-sm font-medium">
+                    {prettyBytes(data.image.size)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 col-span-2">
+                <FileType className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Type</p>
+                  <p className="text-sm font-medium font-mono">
+                    {data.image.type}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="px-5 py-4 border-b border-border space-y-3">
+              <div className="flex items-center gap-2">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Tags
+                </span>
+              </div>
               {tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {tags.map((t) =>
-                    user!.id === data.image.uploader_id ? (
+                    isOwner ? (
                       <Form method="POST" key={t.id} className="flex">
                         <Input type="hidden" name="type" value="remove_tag" />
                         <Input type="hidden" name="tag_id" value={t.id} />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="px-1 py-0"
+                        <button
+                          type="submit"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-secondary text-secondary-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                         >
-                          {t.name} ✕
-                        </Button>
+                          {t.name}
+                          <X className="h-2.5 w-2.5" />
+                        </button>
                       </Form>
                     ) : (
-                      <Badge key={t.id} className="px-1 py-0">
+                      <Badge key={t.id} variant="secondary" className="text-xs">
                         {t.name}
                       </Badge>
                     ),
                   )}
                 </div>
               )}
-              {user!.id === data.image.uploader_id && (
-                <Form method="POST" className="flex gap-2 mt-2">
+              {isOwner && (
+                <Form method="POST" className="flex gap-2">
                   <Input type="hidden" name="type" value="add_tag" />
-                  <Input name="tag" placeholder="Add tag" className="flex-1" />
-                  <Button type="submit" size="sm">
+                  <Input
+                    name="tag"
+                    placeholder="Add a tag…"
+                    className="flex-1 h-8 text-sm"
+                  />
+                  <Button type="submit" size="sm" className="h-8">
                     Add
                   </Button>
                 </Form>
               )}
-            </CardContent>
-            <CardFooter>
-              <ReportImageDialog imageId={data.image.id} />
-            </CardFooter>
-          </Card>
+              {tags.length === 0 && !isOwner && (
+                <p className="text-xs text-muted-foreground">No tags</p>
+              )}
+            </div>
 
-          <Card className="flex-1 flex flex-col">
-            <CardHeader>
-              <CardTitle>Comments ({commentList.length})</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-1 overflow-auto">
+            {/* Actions */}
+            <div className="px-5 py-4 border-b border-border">
+              <ReportImageDialog imageId={data.image.id} />
+            </div>
+
+            {/* Comments */}
+            <div className="px-5 py-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Comments
+                </span>
+                {commentList.length > 0 && (
+                  <span className="text-xs bg-secondary text-secondary-foreground rounded-md px-1.5 py-0.5 font-medium">
+                    {commentList.length}
+                  </span>
+                )}
+              </div>
+
               {commentList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No comments yet</p>
               ) : (
                 <div className="space-y-4">
                   {commentList.map((c) => (
-                    <div
-                      key={c.id}
-                      className="flex items-start space-x-2 text-sm"
-                    >
-                      <Avatar className="h-8 w-8">
+                    <div key={c.id} className="flex items-start gap-3">
+                      <Avatar className="h-7 w-7 shrink-0">
                         <AvatarImage
                           src={
                             c.commenter.avatar_url
@@ -365,14 +457,16 @@ export default function Image() {
                           {c.commenter.username.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <p className="font-medium">{c.commenter.username}</p>
-                        <p className="text-muted-foreground break-words">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold mb-0.5">
+                          {c.commenter.username}
+                        </p>
+                        <p className="text-sm text-muted-foreground break-words leading-snug">
                           {c.content}
                         </p>
                       </div>
                       {(user!.id === c.commenter_id ||
-                        user!.id === data.image.uploader_id ||
+                        isOwner ||
                         user!.is_admin) && (
                         <ConfirmDialog
                           onConfirm={() => {
@@ -386,9 +480,12 @@ export default function Image() {
                             showToast("Comment deleted", "success");
                           }}
                           trigger={
-                            <Button variant="ghost" size="icon">
-                              ✕
-                            </Button>
+                            <button
+                              type="button"
+                              className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
                           }
                         />
                       )}
@@ -396,58 +493,56 @@ export default function Image() {
                   ))}
                 </div>
               )}
-            </CardContent>
-            {user!.id !== "" && (
-              <CardFooter>
-                <fetcher.Form
-                  method="POST"
-                  className="w-full space-y-2"
-                  onSubmit={(e: {
-                    currentTarget: any;
-                    preventDefault: () => void;
-                  }) => {
-                    const form = e.currentTarget;
-                    const fd = new FormData(form);
-                    fetcher.submit(fd, { method: "post" });
-                    const content = fd.get("content");
-                    if (typeof content === "string" && content.length > 0) {
-                      setCommentList((prev) => [
-                        {
-                          id: "temp-" + Date.now(),
-                          content,
-                          commenter_id: user!.id,
-                          commenter: { username: user!.username },
-                        } as any,
-                        ...prev,
-                      ]);
-                      showToast("Comment posted", "success");
-                      form.reset();
-                    }
-                    e.preventDefault();
-                  }}
-                >
-                  <Input type="hidden" name="type" value="create_comment" />
-                  <Textarea
-                    name="content"
-                    placeholder="Add a comment"
-                    required
-                  />
-                  <Button type="submit" className="w-full">
-                    Post
-                  </Button>
-                </fetcher.Form>
-              </CardFooter>
-            )}
-          </Card>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="aspect-square w-full max-w-lg bg-muted flex items-center justify-center overflow-hidden">
-            <img
-              src={`/i/${data.image.id}/raw`}
-              title={data.image.display_name}
-              className="object-contain h-full w-full"
-            />
+            </div>
           </div>
+
+          {/* Comment form — pinned at bottom */}
+          {isLoggedIn && (
+            <div className="shrink-0 border-t border-border p-4">
+              <fetcher.Form
+                method="POST"
+                className="space-y-2"
+                onSubmit={(e: {
+                  currentTarget: any;
+                  preventDefault: () => void;
+                }) => {
+                  const form = e.currentTarget;
+                  const fd = new FormData(form);
+                  fetcher.submit(fd, { method: "post" });
+                  const content = fd.get("content");
+                  if (typeof content === "string" && content.length > 0) {
+                    setCommentList((prev) => [
+                      {
+                        id: "temp-" + Date.now(),
+                        content,
+                        commenter_id: user!.id,
+                        commenter: {
+                          username: user!.username,
+                          avatar_url: null,
+                        },
+                      } as any,
+                      ...prev,
+                    ]);
+                    showToast("Comment posted", "success");
+                    form.reset();
+                  }
+                  e.preventDefault();
+                }}
+              >
+                <Input type="hidden" name="type" value="create_comment" />
+                <Textarea
+                  name="content"
+                  placeholder="Add a comment…"
+                  required
+                  className="text-sm resize-none"
+                  rows={2}
+                />
+                <Button type="submit" size="sm" className="w-full text-white">
+                  Post comment
+                </Button>
+              </fetcher.Form>
+            </div>
+          )}
         </div>
       </div>
     </div>

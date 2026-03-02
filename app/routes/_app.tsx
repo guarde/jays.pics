@@ -59,7 +59,7 @@ export default function Application() {
         user={user}
         version={version}
         siteName={siteName}
-        className="border-r hidden md:block"
+        className="border-r hidden md:flex"
       />
       <div className="flex-grow rounded w-full h-full overflow-auto">
         <Outlet />

@@ -1,9 +1,8 @@
 import { Link } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
 import { Sidebar } from "~/components/ui/sidebar";
 import { cn } from "~/lib/utils";
 
@@ -27,14 +26,24 @@ export function DashboardNavbar({
 
   return (
     <>
-      <header className="md:hidden sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="md:hidden sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="px-4 flex h-14 items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => setOpen(true)}>
-            <Menu className="h-4 w-4" />
-          </Button>
-          <Link to="/dashboard/index" className="font-bold">
+          <button
+            type="button"
+            aria-label="Open navigation"
+            onClick={() => setOpen(true)}
+            className="p-2 -ml-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <Link
+            to="/dashboard/index"
+            className="font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent"
+          >
             {siteName}
           </Link>
+          {/* Spacer to balance the hamburger */}
+          <div className="w-9" />
         </div>
       </header>
       <AnimatePresence>
@@ -44,13 +53,19 @@ export function DashboardNavbar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
           >
-            <button
-              title="Close"
+            {/* Backdrop */}
+            <motion.button
+              title="Close navigation"
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute inset-0 bg-black/50"
+              className="absolute inset-0 bg-black/60"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             />
+            {/* Sidebar panel */}
             <motion.div
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
@@ -63,7 +78,7 @@ export function DashboardNavbar({
                 user={user}
                 version={version}
                 siteName={siteName}
-                className={cn("w-64 border-r bg-background h-full")}
+                className={cn("border-r bg-background h-full")}
               />
             </motion.div>
           </motion.div>
