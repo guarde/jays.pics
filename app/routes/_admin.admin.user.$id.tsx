@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
   });
 
-  if (userData === null) return redirect('/admin/index');
+  if (userData === null) return redirect("/admin/index");
 
   const user = {
     ...userData,
@@ -107,14 +107,7 @@ export default function AdminProfile() {
         <CardContent className="pt-6">
           <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage
-                src={
-                  user.avatar_url
-                    ? `/avatar/${id}`
-                    : `https://api.dicebear.com/6.x/initials/svg?seed=${user.username}`
-                }
-                alt={user?.username}
-              />
+              <AvatarImage src={`/avatar/${id}`} alt={user?.username} />
               <AvatarFallback>
                 {user?.username.slice(0, 2).toUpperCase()}
               </AvatarFallback>
@@ -286,11 +279,18 @@ export default function AdminProfile() {
               {images.map((image) => (
                 <Card key={image.id}>
                   <CardContent className="p-2 space-y-2">
-                  <button
+                    <button
                       type="button"
-                      onClick={(e) => e.currentTarget.querySelector('img')?.classList.toggle('blur-xl')}
+                      onClick={(e) =>
+                        e.currentTarget
+                          .querySelector("img")
+                          ?.classList.toggle("blur-xl")
+                      }
                       onKeyDown={(e) =>
-                        e.key === 'Enter' && e.currentTarget.querySelector('img')?.classList.toggle('blur-xl')
+                        e.key === "Enter" &&
+                        e.currentTarget
+                          .querySelector("img")
+                          ?.classList.toggle("blur-xl")
                       }
                       className="p-0 border-0 bg-transparent"
                     >
@@ -458,7 +458,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     return null;
   } else if (requestType === "update_space") {
-    const maxSpaceRaw = formData.get('max_space');
+    const maxSpaceRaw = formData.get("max_space");
     const maxSpace = maxSpaceRaw ? BigInt(maxSpaceRaw.toString()) : 0n;
     if (maxSpace > 0) {
       await prisma.user.update({

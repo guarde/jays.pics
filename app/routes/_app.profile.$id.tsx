@@ -19,7 +19,6 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { prisma } from "~/services/database.server";
 import {
-  getDiscordAvatarUrl,
   getDiscordBannerUrl,
   getDiscordDecorationUrl,
 } from "~/services/discord";
@@ -235,13 +234,8 @@ export default function Profile() {
 
   const discord = user.discord_profile;
 
-  // Resolve avatar URL
-  const avatarSrc =
-    discord?.use_avatar && discord.discord_avatar
-      ? getDiscordAvatarUrl(discord.discord_id, discord.discord_avatar)
-      : user.avatar_url
-        ? `/avatar/${user.id}`
-        : `https://api.dicebear.com/6.x/initials/svg?seed=${user.username}`;
+  // Avatar route handles the full priority chain: Discord → uploaded → 404 (AvatarFallback shows initials)
+  const avatarSrc = `/avatar/${user.id}`;
 
   // Resolve banner
   const discordBannerUrl =

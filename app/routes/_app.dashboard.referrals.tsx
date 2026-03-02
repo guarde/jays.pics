@@ -134,13 +134,7 @@ export default function Referrals() {
                   className="flex items-center gap-3 px-5 py-3.5 hover:bg-accent/40 transition-colors"
                 >
                   <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarImage
-                      src={
-                        referral.referred.avatar_url
-                          ? `/avatar/${referral.referred.id}`
-                          : `https://api.dicebear.com/6.x/initials/svg?seed=${referral.referred.username}`
-                      }
-                    />
+                    <AvatarImage src={`/avatar/${referral.referred.id}`} />
                     <AvatarFallback className="text-xs">
                       {referral.referred.username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>

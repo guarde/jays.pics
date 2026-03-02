@@ -28,8 +28,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return new Response(data, {
     headers: {
       "Content-Type": "image/png",
-      "Cache-Control":
-        "public, immutable, no-transform, s-maxage=31536000, max-age=31536000",
+      "Cache-Control": "public, max-age=60, must-revalidate",
     },
   });
 }
