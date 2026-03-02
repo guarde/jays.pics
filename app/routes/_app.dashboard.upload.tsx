@@ -9,6 +9,7 @@ import { Ban } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
+import { can, perms } from "~/lib/permissions";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -165,6 +166,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         "Set-Cookie": await destroySession(session),
       },
     });
+
+  if (!can(user.permissions, perms.bits.CanUploadImages))
+    throw new Response("Forbidden", { status: 403 });
 
   const site = await prisma.site.findFirst();
 

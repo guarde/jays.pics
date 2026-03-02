@@ -17,6 +17,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { can, perms } from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
 import {
   getDiscordBannerUrl,
@@ -60,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const viewer = session.has("userID")
     ? await getUserBySession(session)
-    : { id: "", username: "Guest", is_admin: false };
+    : { id: "", username: "Guest", permissions: "0" };
 
   if (!viewer) return redirect("/");
 
@@ -131,7 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         comment &&
         (comment.commenter_id === viewer!.id ||
           viewer!.id === profileUser.id ||
-          viewer!.is_admin)
+          can(viewer!.permissions, perms.bits.CanViewReports))
       ) {
         await prisma.comment.delete({ where: { id: commentId } });
       }
@@ -139,6 +140,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (type === "report_comment") {
+    if (!can(viewer!.permissions, perms.bits.CanMakeReport))
+      return redirect(`/profile/${params.id}`);
     const commentId = formData.get("comment_id");
     const reasonType = formData.get("reason_type");
     const detail = formData.get("detail");
@@ -566,7 +569,10 @@ export default function Profile() {
                       <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 mt-0.5 transition-opacity">
                         {(viewer.id === c.commenter_id ||
                           isOwner ||
-                          viewer.is_admin) && (
+                          can(
+                            viewer.permissions,
+                            perms.bits.CanViewReports,
+                          )) && (
                           <ConfirmDialog
                             onConfirm={() => {
                               const fd = new FormData();

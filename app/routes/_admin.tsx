@@ -3,6 +3,7 @@ import { Outlet, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 
 import { AdminNavbar } from "~/components/admin-navbar";
 import { SidebarAdmin } from "~/components/ui/sidebar-admin";
+import { can, perms } from "~/lib/permissions";
 import {
   destroySession,
   getSession,
@@ -31,7 +32,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const user = await getUserBySession(session);
 
-  if (!user?.is_admin) return redirect("/");
+  if (!user || !can(user.permissions, perms.bits.CanViewAdminDashboard))
+    return redirect("/");
 
   if (user === null)
     return redirect("/", {

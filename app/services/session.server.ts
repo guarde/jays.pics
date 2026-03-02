@@ -30,7 +30,7 @@ export async function getUserBySession(session: Session) {
       images: true,
       referrer_profile: true,
       upload_preferences: true,
-      is_admin: true,
+      permissions: true,
       upload_key: true,
       username_changed_at: true,
       username_history: true,
@@ -54,6 +54,7 @@ export async function getUserBySession(session: Session) {
 
   return {
     ...user,
+    permissions: user.permissions.toString(),
     max_space: Number(user.max_space),
     space_used: Number(user.space_used),
     StorageSubscription:

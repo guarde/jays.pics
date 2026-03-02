@@ -6,6 +6,7 @@ import {
 } from "@remix-run/node";
 import { z } from "zod";
 
+import { can, perms } from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
 import { getSession, getUserBySession } from "~/services/session.server";
 
@@ -18,6 +19,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   if (!session.has("userID")) return redirect("/");
   const user = await getUserBySession(session);
+
+  if (!user || !can(user.permissions, perms.bits.CanComment))
+    throw new Response("Forbidden", { status: 403 });
 
   const formData = await request.formData();
   const payload = Object.fromEntries(formData);

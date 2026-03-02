@@ -19,9 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { can, perms } from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
+import { getSession, getUserBySession } from "~/services/session.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const viewer = await getUserBySession(session);
+  if (!viewer || !can(viewer.permissions, perms.bits.CanSeeErrors))
+    throw new Response("Forbidden", { status: 403 });
+
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
   const count = await prisma.siteError.count();

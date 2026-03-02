@@ -13,7 +13,9 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { can, perms } from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
+import { getSession, getUserBySession } from "~/services/session.server";
 
 export async function loader() {
   const announcement = await prisma.announcement.findMany({
@@ -94,12 +96,18 @@ const announcementSchema = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const viewer = await getUserBySession(session);
+  if (!viewer) throw new Response("Forbidden", { status: 403 });
+
   const formData = await request.formData();
   const payload = Object.fromEntries(formData);
   const requestType = formData.get("type");
 
   if (requestType === "update_annoucement") {
-    const result = announcementSchema.safeParse(payload);
+    if (!can(viewer.permissions, perms.bits.CanMakeAnnouncement))
+      throw new Response("Forbidden", { status: 403 });
+    result = announcementSchema.safeParse(payload);
     if (!result.success) {
       const error = result.error.flatten();
       return { payload, formErrors: error.formErrors, fieldErrors: error.fieldErrors };

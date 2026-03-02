@@ -10,7 +10,7 @@ import { SidebarAdmin } from "./ui/sidebar-admin";
 interface AdminNavbarProps {
   user: {
     username: string;
-    is_admin: boolean;
+    permissions: string;
     notifications?: { id: string; content: string; created_at: string }[];
     images: any[];
   };
