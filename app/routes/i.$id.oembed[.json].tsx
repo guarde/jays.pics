@@ -1,23 +1,8 @@
-import { json, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import { json, LoaderFunctionArgs } from "@remix-run/node";
 import prettyBytes from "pretty-bytes";
 
 import { templateReplacer } from "~/lib/utils";
 import { prisma } from "~/services/database.server";
-
-export const meta: MetaFunction = ({ matches }) => {
-  const rootData = matches.find((m) => m.id === "root")?.data as
-    | { siteName?: string }
-    | undefined;
-  const siteName = rootData?.siteName ?? "jays.pics";
-  return [
-    { title: `oEmbed | ${siteName}` },
-    { name: "description", content: "Administration Dashboard" },
-    {
-      name: "theme-color",
-      content: "#e05cd9",
-    },
-  ];
-};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const image = await prisma.image.findFirst({ where: { id: params.id } });
@@ -60,14 +45,26 @@ export async function loader({ params }: LoaderFunctionArgs) {
     dictionary,
   );
 
+  const title = templateReplacer(
+    uploader?.upload_preferences?.embed_title ?? "",
+    dictionary,
+  );
+
   const siteName = process.env.SITE_NAME ?? "jays.pics";
   const baseDomain = process.env.BASE_DOMAIN ?? "jays.pics";
 
+  const rawUrl = `https://${baseDomain}/i/${image.id}/raw${image.type === "image/gif" ? ".gif" : ""}`;
+
   return json({
-    author_name: author,
-    author_url: `https://${baseDomain}/profile/${uploader?.id}`,
-    provider_name: `Hosted with 🩵 at ${siteName}`,
-    provider_url: `https://${baseDomain}`,
+    version: "1.0",
     type: "photo",
+    title: title || image.display_name,
+    author_name: author || uploader?.username,
+    author_url: `https://${baseDomain}/profile/${uploader?.id}`,
+    provider_name: siteName,
+    provider_url: `https://${baseDomain}`,
+    url: rawUrl,
+    width: 0,
+    height: 0,
   });
 }
