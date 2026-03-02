@@ -4,6 +4,7 @@ import { FormStrategy } from "remix-auth-form";
 import { z } from "zod";
 
 import { prisma } from "./database.server";
+import { discordStrategy } from "./discord.server";
 import { sessionStorage, getClientIP } from "./session.server";
 
 export class FormError extends AuthorizationError {
@@ -239,3 +240,5 @@ authenticator.use(
 export async function logout(request: Request) {
   return authenticator.logout(request, { redirectTo: "/" });
 }
+
+authenticator.use(discordStrategy, "discord");

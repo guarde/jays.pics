@@ -14,7 +14,13 @@ module.exports = {
     es6: true,
     node: true, // Added for Remix server-side code
   },
-  ignorePatterns: ["!**/.server", "!**/.client", "dist", "node_modules"],
+  ignorePatterns: [
+    "!**/.server",
+    "!**/.client",
+    "dist",
+    "node_modules",
+    "**/*.cjs",
+  ],
 
   // Base config
   extends: [
