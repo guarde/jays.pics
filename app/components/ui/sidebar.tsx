@@ -24,6 +24,7 @@ import { FaDiscord } from "react-icons/fa";
 
 import { cn, formatNumber } from "~/lib/utils";
 
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import { NotificationTray } from "./notification-tray";
 import { Separator } from "./separator";
 import { ThemeToggle } from "./themetoggle";
@@ -31,6 +32,7 @@ import { ThemeToggle } from "./themetoggle";
 interface SidebarProps {
   className?: string;
   user: {
+    id: string;
     username: string;
     is_admin: boolean;
     notifications: any[];
@@ -257,9 +259,12 @@ export function Sidebar({
           onClick={() => setShowUserMenu(!showUserMenu)}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
         >
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
-            {initials}
-          </div>
+          <Avatar className="h-6 w-6 shrink-0">
+            <AvatarImage src={`/avatar/${user.id}`} alt={user.username} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <span className="flex-1 text-left truncate">{user.username}</span>
           <ChevronDown
             className={cn(

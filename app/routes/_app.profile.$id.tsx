@@ -313,7 +313,7 @@ export default function Profile() {
                   src={decorationUrl}
                   alt="Discord decoration"
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ transform: "scale(1.35)" }}
+                  style={{ transform: "scale(1.2)" }}
                 />
               )}
             </div>
@@ -575,11 +575,7 @@ export default function Profile() {
                     >
                       <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage
-                          src={
-                            c.commenter.avatar_url
-                              ? `/avatar/${c.commenter_id}`
-                              : `https://api.dicebear.com/6.x/initials/svg?seed=${c.commenter.username}`
-                          }
+                          src={`/avatar/${c.commenter_id}`}
                           alt={c.commenter.username}
                         />
                         <AvatarFallback className="text-xs">
