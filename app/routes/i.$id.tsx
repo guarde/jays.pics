@@ -7,6 +7,7 @@ import {
 } from "@remix-run/node";
 import {
   Form,
+  Link,
   MetaFunction,
   useFetcher,
   useLoaderData,
@@ -235,6 +236,7 @@ export default function ImagePage() {
       {isLoggedIn ? (
         <Sidebar
           user={{
+            id: user!.id,
             username: user!.username,
             is_admin: user!.is_admin,
             notifications: user!.notifications,
@@ -320,11 +322,7 @@ export default function ImagePage() {
               <div className="px-5 py-4 border-b border-border flex items-center gap-3">
                 <Avatar className="h-9 w-9 shrink-0">
                   <AvatarImage
-                    src={
-                      data.uploader.avatar_url
-                        ? `/avatar/${data.image.uploader_id}`
-                        : `https://api.dicebear.com/6.x/initials/svg?seed=${data.uploader.username}`
-                    }
+                    src={`/avatar/${data.image.uploader_id}`}
                     alt={data.uploader.username}
                   />
                   <AvatarFallback>
@@ -332,9 +330,12 @@ export default function ImagePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">
+                  <Link
+                    to={`/profile/${data.uploader.username}`}
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
                     {data.uploader.username}
-                  </p>
+                  </Link>
                   <p className="text-xs text-muted-foreground">Uploader</p>
                 </div>
               </div>
@@ -446,11 +447,7 @@ export default function ImagePage() {
                     <div key={c.id} className="flex items-start gap-3">
                       <Avatar className="h-7 w-7 shrink-0">
                         <AvatarImage
-                          src={
-                            c.commenter.avatar_url
-                              ? `/avatar/${c.commenter_id}`
-                              : `https://api.dicebear.com/6.x/initials/svg?seed=${c.commenter.username}`
-                          }
+                          src={`/avatar/${c.commenter_id}`}
                           alt={c.commenter.username}
                         />
                         <AvatarFallback>
@@ -557,7 +554,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
 
   if (!data) return [{ title: `Image | ${fallbackSiteName}` }];
 
-  const { siteName, baseDomain } = data;
+  const { baseDomain } = data;
   const dictionary = {
     "image.name": data.data.image?.display_name,
     "image.size_bytes": data.data.image?.size,
@@ -571,14 +568,15 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
     "uploader.total_storage": prettyBytes(data.data.uploader!.max_space),
   };
 
-  const title = templateReplacer(
+  const titleTemplate = templateReplacer(
     data.data.uploader?.upload_preferences?.embed_title ?? "",
     dictionary,
   );
+  const ogTitle = titleTemplate || data.data.image?.display_name || "";
 
   return [
     { title: data.data.image?.display_name },
-    { property: "og:title", content: title },
+    { property: "og:title", content: ogTitle },
     { property: "og:description", content: "" },
     { property: "og:type", content: "website" },
     {
@@ -595,6 +593,7 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
     },
     {
       tagName: "link",
+      rel: "alternate",
       type: "application/json+oembed",
       href: `https://${baseDomain}/i/${data.data.image!.id}/oembed.json`,
     },

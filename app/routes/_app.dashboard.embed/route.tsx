@@ -290,11 +290,7 @@ export default function Embed() {
                   <div className="shrink-0 mt-0.5">
                     <Avatar className="h-10 w-10">
                       <AvatarImage
-                        src={
-                          data!.user.avatar_url
-                            ? `/avatar/${data!.user.id}`
-                            : `https://api.dicebear.com/6.x/initials/svg?seed=${data!.user.username}`
-                        }
+                        src={`/avatar/${data!.user.id}`}
                         alt={data!.user.username}
                       />
                       <AvatarFallback className="text-sm font-bold bg-primary/20 text-primary">

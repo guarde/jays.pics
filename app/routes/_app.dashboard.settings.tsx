@@ -253,13 +253,7 @@ export default function Settings() {
                 {/* Avatar */}
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16 shrink-0">
-                    <AvatarImage
-                      src={
-                        data.user.avatar_url
-                          ? `/avatar/${data.user.id}`
-                          : `https://api.dicebear.com/6.x/initials/svg?seed=${data.user.username}`
-                      }
-                    />
+                    <AvatarImage src={`/avatar/${data.user.id}`} />
                     <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
                       {data.user.username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>

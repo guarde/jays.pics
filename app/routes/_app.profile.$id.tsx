@@ -19,7 +19,6 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { prisma } from "~/services/database.server";
 import {
-  getDiscordAvatarUrl,
   getDiscordBannerUrl,
   getDiscordDecorationUrl,
 } from "~/services/discord";
@@ -235,13 +234,8 @@ export default function Profile() {
 
   const discord = user.discord_profile;
 
-  // Resolve avatar URL
-  const avatarSrc =
-    discord?.use_avatar && discord.discord_avatar
-      ? getDiscordAvatarUrl(discord.discord_id, discord.discord_avatar)
-      : user.avatar_url
-        ? `/avatar/${user.id}`
-        : `https://api.dicebear.com/6.x/initials/svg?seed=${user.username}`;
+  // Avatar route handles the full priority chain: Discord → uploaded → 404 (AvatarFallback shows initials)
+  const avatarSrc = `/avatar/${user.id}`;
 
   // Resolve banner
   const discordBannerUrl =
@@ -275,31 +269,10 @@ export default function Profile() {
                 <div className="absolute -bottom-16 left-1/3 w-72 h-72 rounded-full bg-black/10" />
               </>
             )}
-
-            {/* Stats — bottom left of banner */}
-            <div className="absolute bottom-6 left-6 flex items-end gap-8">
-              <div>
-                <p className="text-2xl font-bold text-white leading-none">
-                  {images.length}
-                </p>
-                <p className="text-[11px] text-white/60 uppercase tracking-wider mt-1">
-                  Images
-                </p>
-              </div>
-              <div className="w-px h-8 bg-white/20 mb-1" />
-              <div>
-                <p className="text-2xl font-bold text-white leading-none">
-                  {referrals.length}
-                </p>
-                <p className="text-[11px] text-white/60 uppercase tracking-wider mt-1">
-                  Referrals
-                </p>
-              </div>
-            </div>
           </div>
 
-          {/* Avatar — half below the banner */}
-          <div className="absolute bottom-0 right-6 translate-y-1/2 z-10">
+          {/* Avatar — half below the banner, left-aligned */}
+          <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
             <div className="relative">
               <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl">
                 <AvatarImage src={avatarSrc} alt={user.username} />
@@ -313,7 +286,7 @@ export default function Profile() {
                   src={decorationUrl}
                   alt="Discord decoration"
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ transform: "scale(1.35)" }}
+                  style={{ transform: "scale(1.2)" }}
                 />
               )}
             </div>
@@ -321,8 +294,8 @@ export default function Profile() {
         </div>
 
         {/* Profile info row */}
-        <div className="pt-10 pb-5 border-b border-border flex flex-wrap items-end justify-between gap-4">
-          <div>
+        <div className="pt-14 pb-5 border-b border-border flex flex-wrap items-end justify-between gap-4">
+          <div className="pl-6">
             <h1 className="text-2xl font-bold">{user.username}</h1>
             <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
@@ -575,11 +548,7 @@ export default function Profile() {
                     >
                       <Avatar className="h-8 w-8 shrink-0">
                         <AvatarImage
-                          src={
-                            c.commenter.avatar_url
-                              ? `/avatar/${c.commenter_id}`
-                              : `https://api.dicebear.com/6.x/initials/svg?seed=${c.commenter.username}`
-                          }
+                          src={`/avatar/${c.commenter_id}`}
                           alt={c.commenter.username}
                         />
                         <AvatarFallback className="text-xs">

@@ -100,6 +100,13 @@ export const discordStrategy = new OAuth2Strategy<string, DiscordProfile>(
     });
 
     if (existingProfile) {
+      // Check if account is locked before logging in
+      const userRecord = await prisma.user.findUnique({
+        where: { id: existingProfile.userId },
+        select: { locked: true },
+      });
+      if (userRecord?.locked) throw new Error("This account has been locked.");
+
       // Refresh Discord data and log the user in
       await prisma.discordProfile.update({
         where: { discord_id: discordUser.id },
