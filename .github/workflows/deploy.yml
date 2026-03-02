@@ -43,6 +43,7 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             set -e
+            export PATH=$HOME/.npm-global/bin:/usr/local/bin:$PATH
             cd /var/www/jays.pics
 
             # Pull latest code
