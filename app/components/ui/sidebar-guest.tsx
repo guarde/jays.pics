@@ -17,7 +17,7 @@ export function SidebarGuest({ className }: SidebarProps) {
   const siteName = rootData?.siteName ?? "jays.pics";
 
   return (
-    <div className={cn("pb-12 w-64 relative", className)}>
+    <div className={cn("pb-12 w-64 shrink-0 relative", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">

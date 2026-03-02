@@ -1,29 +1,23 @@
-import { Link } from "@remix-run/react";
+import { Link, NavLink } from "@remix-run/react";
 import {
   ArrowLeft,
-  Bell,
-  BellDotIcon,
   CircleX,
+  DollarSign,
   Globe2,
-  Hammer,
   HardDrive,
   Home,
   Images,
   Logs,
   PanelsTopLeft,
-  Sticker,
-  User,
   Users,
 } from "lucide-react";
-import { useState } from "react";
 
-import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 import { Separator } from "./separator";
 import { ThemeToggle } from "./themetoggle";
 
-interface SidebarProps {
+interface SidebarAdminProps {
   className?: string;
   user: {
     username: string;
@@ -34,143 +28,130 @@ interface SidebarProps {
   onLinkClick?: () => void;
 }
 
+function NavItem({
+  to,
+  icon: Icon,
+  children,
+  onClick,
+}: {
+  to: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full",
+          isActive
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+        )
+      }
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{children}</span>
+    </NavLink>
+  );
+}
+
 export function SidebarAdmin({
   className,
   user,
   siteName,
   onLinkClick,
-}: SidebarProps) {
+}: Readonly<SidebarAdminProps>) {
+  const initials = user.username.slice(0, 2).toUpperCase();
+
   return (
-    <div className={cn("pb-12 w-64 relative", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {siteName} - Admin
-          </h2>
-          <Separator className="my-4" />
-          <div className="space-y-1">
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/index">
-                <Home className="mr-2 h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/users">
-                <Users className="mr-2 h-4 w-4" />
-                Users
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/images">
-                <Images className="mr-2 h-4 w-4" />
-                Images
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/domains">
-                <Globe2 className="mr-2 h-4 w-4" />
-                Domains
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/subscriptions">
-                <HardDrive className="mr-2 h-4 w-4" />
-                Subscriptions
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/logs">
-                <Logs className="mr-2 h-4 w-4" />
-                Logs
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/errors">
-                <CircleX className="mr-2 h-4 w-4" />
-                Errors
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/admin/site">
-                <PanelsTopLeft className="mr-2 h-4 w-4" />
-                Site
-              </Link>
-            </Button>
-          </div>
-        </div>
+    <div className={cn("flex flex-col h-full w-64 relative", className)}>
+      {/* Header */}
+      <div className="flex items-center px-4 h-14 border-b border-border shrink-0">
+        <Link
+          to="/admin/index"
+          onClick={onLinkClick}
+          className="flex items-baseline gap-1.5"
+        >
+          <span className="font-bold text-base bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+            {siteName}
+          </span>
+          <span className="text-xs font-medium text-muted-foreground">
+            admin
+          </span>
+        </Link>
       </div>
-      <div className="absolute bottom-4 left-0 right-0 px-3">
-        <div className="space-y-1">
-          <Button
-            onClick={onLinkClick}
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <Link to="#" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              {user.username}
-            </Link>
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <ThemeToggle />
-          </Button>
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <Link to="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Normal Dashboard
-            </Link>
-          </Button>
+
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+        <NavItem to="/admin/index" icon={Home} onClick={onLinkClick}>
+          Dashboard
+        </NavItem>
+        <NavItem to="/admin/users" icon={Users} onClick={onLinkClick}>
+          Users
+        </NavItem>
+        <NavItem to="/admin/images" icon={Images} onClick={onLinkClick}>
+          Images
+        </NavItem>
+        <NavItem to="/admin/domains" icon={Globe2} onClick={onLinkClick}>
+          Domains
+        </NavItem>
+        <NavItem
+          to="/admin/subscriptions"
+          icon={HardDrive}
+          onClick={onLinkClick}
+        >
+          Subscriptions
+        </NavItem>
+        <NavItem to="/admin/logs" icon={Logs} onClick={onLinkClick}>
+          Logs
+        </NavItem>
+        <NavItem to="/admin/errors" icon={CircleX} onClick={onLinkClick}>
+          Errors
+        </NavItem>
+        <NavItem to="/admin/site" icon={PanelsTopLeft} onClick={onLinkClick}>
+          Site
+        </NavItem>
+        <NavItem
+          to="/admin/aws-pricing"
+          icon={DollarSign}
+          onClick={onLinkClick}
+        >
+          AWS Pricing
+        </NavItem>
+      </div>
+
+      {/* Bottom */}
+      <div className="shrink-0 border-t border-border px-3 py-3 space-y-0.5">
+        {/* User display */}
+        <div className="flex items-center gap-3 px-3 py-2 mb-0.5">
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
+            {initials}
+          </div>
+          <span className="flex-1 text-sm text-muted-foreground truncate">
+            {user.username}
+          </span>
+          <span className="text-xs bg-primary/10 text-primary rounded px-1.5 py-0.5 shrink-0">
+            admin
+          </span>
         </div>
+
+        <div className="py-0.5">
+          <ThemeToggle />
+        </div>
+
+        <Separator className="my-1.5" />
+
+        <Link
+          to="/dashboard/index"
+          onClick={onLinkClick}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          Back to Dashboard
+        </Link>
       </div>
     </div>
   );

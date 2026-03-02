@@ -5,16 +5,13 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronRight,
-  Clipboard,
   Database,
   FileImage,
   Globe,
   Link2,
   MessageSquare,
   Shield,
-  Upload,
   User,
-  UserPlus,
   Zap,
 } from "lucide-react";
 import prettyBytes from "pretty-bytes";
@@ -104,30 +101,6 @@ const FEATURES = [
   },
 ];
 
-const STEPS = [
-  {
-    icon: UserPlus,
-    step: "01",
-    title: "Get invited",
-    description:
-      "Request a referral from an existing member or join our Discord. We keep the doors small to keep the service fast.",
-  },
-  {
-    icon: Upload,
-    step: "02",
-    title: "Upload anything",
-    description:
-      "Drag & drop in the dashboard, paste from clipboard, or configure ShareX to auto-upload with a hotkey.",
-  },
-  {
-    icon: Clipboard,
-    step: "03",
-    title: "Share your link",
-    description:
-      "Copy a short link, use your custom domain, or drop the URL straight into Discord for a rich preview embed.",
-  },
-];
-
 const FAQ = [
   {
     q: "How do I get an account?",
@@ -184,6 +157,393 @@ function FAQItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function HowItWorksSVG() {
+  return (
+    <svg
+      viewBox="0 0 640 180"
+      width="640"
+      height="180"
+      className="w-full max-w-2xl"
+      style={{ fontFamily: "inherit" }}
+    >
+      <defs>
+        <style>{`
+          @keyframes fadeSlideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+          @keyframes dash { to { stroke-dashoffset: 0; } }
+          @keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+          @keyframes uploadRise { from{transform:translateY(0);opacity:1} to{transform:translateY(-22px);opacity:0} }
+          @keyframes linkPop { 0%{transform:scale(0.7);opacity:0} 60%{transform:scale(1.1);opacity:1} 100%{transform:scale(1);opacity:1} }
+          .step1{animation:fadeSlideIn .5s ease both}
+          .step2{animation:fadeSlideIn .5s .8s ease both}
+          .step3{animation:fadeSlideIn .5s 1.6s ease both}
+          .arrow1{stroke-dasharray:60;stroke-dashoffset:60;animation:dash .5s .5s ease forwards}
+          .arrow2{stroke-dasharray:60;stroke-dashoffset:60;animation:dash .5s 1.3s ease forwards}
+          .cfg-line{animation:fadeSlideIn .4s .3s ease both}
+          .upload-arrow{animation:uploadRise 1s 1.8s ease infinite}
+          .link-badge{animation:linkPop .4s 2.4s ease both;opacity:0}
+          .sel-box{animation:pulse 1.2s 1.0s ease infinite}
+        `}</style>
+      </defs>
+
+      {/* ── Step 1: Config download ── */}
+      <g className="step1">
+        {/* Browser window */}
+        <rect
+          x="20"
+          y="20"
+          width="140"
+          height="110"
+          rx="8"
+          fill="#1e1f22"
+          stroke="#3f4147"
+          strokeWidth="1.5"
+        />
+        <rect x="20" y="20" width="140" height="22" rx="8" fill="#2b2d31" />
+        <rect x="20" y="34" width="140" height="8" fill="#2b2d31" />
+        <circle cx="34" cy="31" r="3" fill="#f23f42" opacity=".7" />
+        <circle cx="46" cy="31" r="3" fill="#f0b132" opacity=".7" />
+        <circle cx="58" cy="31" r="3" fill="#23a559" opacity=".7" />
+        {/* File card */}
+        <rect
+          x="35"
+          y="50"
+          width="110"
+          height="66"
+          rx="6"
+          fill="#313338"
+          stroke="#3f4147"
+          strokeWidth="1"
+        />
+        {/* Config file icon */}
+        <rect
+          x="48"
+          y="58"
+          width="28"
+          height="34"
+          rx="3"
+          fill="#e05cd9"
+          opacity=".2"
+          stroke="#e05cd9"
+          strokeWidth="1"
+        />
+        <line
+          x1="53"
+          y1="66"
+          x2="70"
+          y2="66"
+          stroke="#e05cd9"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity=".7"
+        />
+        <line
+          x1="53"
+          y1="71"
+          x2="70"
+          y2="71"
+          stroke="#e05cd9"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity=".7"
+        />
+        <line
+          x1="53"
+          y1="76"
+          x2="64"
+          y2="76"
+          stroke="#e05cd9"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          opacity=".5"
+        />
+        <text x="83" y="68" fontSize="7.5" fill="#dbdee1" fontWeight="600">
+          .sxcu
+        </text>
+        <text x="83" y="78" fontSize="6.5" fill="#80848e">
+          config
+        </text>
+        {/* Download arrow */}
+        <g className="cfg-line">
+          <line
+            x1="90"
+            y1="88"
+            x2="90"
+            y2="102"
+            stroke="#e05cd9"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          <polyline
+            points="86,98 90,104 94,98"
+            fill="none"
+            stroke="#e05cd9"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </g>
+        <text
+          x="90"
+          y="130"
+          fontSize="9"
+          fill="#e05cd9"
+          textAnchor="middle"
+          fontWeight="600"
+        >
+          Download config
+        </text>
+      </g>
+
+      {/* ── Arrow 1 ── */}
+      <line
+        className="arrow1"
+        x1="168"
+        y1="75"
+        x2="218"
+        y2="75"
+        stroke="#e05cd9"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity=".6"
+      />
+      <polyline
+        className="arrow1"
+        points="212,70 220,75 212,80"
+        fill="none"
+        stroke="#e05cd9"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        opacity=".6"
+      />
+
+      {/* ── Step 2: Screenshot ── */}
+      <g className="step2">
+        {/* Desktop screen */}
+        <rect
+          x="230"
+          y="20"
+          width="180"
+          height="120"
+          rx="8"
+          fill="#1e1f22"
+          stroke="#3f4147"
+          strokeWidth="1.5"
+        />
+        <rect x="230" y="20" width="180" height="22" rx="8" fill="#2b2d31" />
+        <rect x="230" y="34" width="180" height="8" fill="#2b2d31" />
+        <circle cx="244" cy="31" r="3" fill="#f23f42" opacity=".7" />
+        <circle cx="256" cy="31" r="3" fill="#f0b132" opacity=".7" />
+        <circle cx="268" cy="31" r="3" fill="#23a559" opacity=".7" />
+        {/* Screen content (fake app) */}
+        <rect x="242" y="48" width="80" height="10" rx="3" fill="#313338" />
+        <rect
+          x="242"
+          y="62"
+          width="60"
+          height="6"
+          rx="2"
+          fill="#313338"
+          opacity=".7"
+        />
+        <rect
+          x="242"
+          y="72"
+          width="70"
+          height="6"
+          rx="2"
+          fill="#313338"
+          opacity=".5"
+        />
+        <rect
+          x="242"
+          y="84"
+          width="50"
+          height="40"
+          rx="4"
+          fill="#313338"
+          opacity=".8"
+        />
+        <rect
+          x="298"
+          y="84"
+          width="90"
+          height="40"
+          rx="4"
+          fill="#313338"
+          opacity=".6"
+        />
+        {/* Selection box */}
+        <rect
+          className="sel-box"
+          x="256"
+          y="80"
+          width="120"
+          height="52"
+          rx="3"
+          fill="none"
+          stroke="#e05cd9"
+          strokeWidth="1.5"
+          strokeDasharray="4 2"
+        />
+        {/* Corner handles */}
+        <rect
+          x="253.5"
+          y="77.5"
+          width="5"
+          height="5"
+          rx="1"
+          fill="#e05cd9"
+          opacity=".8"
+        />
+        <rect
+          x="373.5"
+          y="77.5"
+          width="5"
+          height="5"
+          rx="1"
+          fill="#e05cd9"
+          opacity=".8"
+        />
+        <rect
+          x="253.5"
+          y="129.5"
+          width="5"
+          height="5"
+          rx="1"
+          fill="#e05cd9"
+          opacity=".8"
+        />
+        <rect
+          x="373.5"
+          y="129.5"
+          width="5"
+          height="5"
+          rx="1"
+          fill="#e05cd9"
+          opacity=".8"
+        />
+        <text
+          x="320"
+          y="155"
+          fontSize="9"
+          fill="#e05cd9"
+          textAnchor="middle"
+          fontWeight="600"
+        >
+          Screenshot region
+        </text>
+      </g>
+
+      {/* ── Arrow 2 ── */}
+      <line
+        className="arrow2"
+        x1="418"
+        y1="75"
+        x2="468"
+        y2="75"
+        stroke="#e05cd9"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity=".6"
+      />
+      <polyline
+        className="arrow2"
+        points="462,70 470,75 462,80"
+        fill="none"
+        stroke="#e05cd9"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        opacity=".6"
+      />
+
+      {/* ── Step 3: Upload & link ── */}
+      <g className="step3">
+        {/* Cloud upload icon */}
+        <ellipse
+          cx="552"
+          cy="65"
+          rx="32"
+          ry="22"
+          fill="#1e1f22"
+          stroke="#3f4147"
+          strokeWidth="1.5"
+        />
+        <ellipse
+          cx="534"
+          cy="72"
+          rx="16"
+          ry="14"
+          fill="#1e1f22"
+          stroke="#3f4147"
+          strokeWidth="1.5"
+        />
+        <ellipse
+          cx="572"
+          cy="74"
+          rx="14"
+          ry="12"
+          fill="#1e1f22"
+          stroke="#3f4147"
+          strokeWidth="1.5"
+        />
+        <rect x="535" y="65" width="32" height="22" fill="#1e1f22" />
+        {/* Upload arrow (animated) */}
+        <g className="upload-arrow">
+          <line
+            x1="551"
+            y1="72"
+            x2="551"
+            y2="56"
+            stroke="#e05cd9"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <polyline
+            points="546,62 551,54 556,62"
+            fill="none"
+            stroke="#e05cd9"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        </g>
+        {/* Link badge */}
+        <g className="link-badge">
+          <rect
+            x="510"
+            y="98"
+            width="82"
+            height="22"
+            rx="11"
+            fill="#e05cd9"
+            opacity=".15"
+            stroke="#e05cd9"
+            strokeWidth="1"
+          />
+          <text
+            x="551"
+            y="113"
+            fontSize="8"
+            fill="#e05cd9"
+            textAnchor="middle"
+            fontWeight="700"
+          >
+            Link copied ✓
+          </text>
+        </g>
+        <text
+          x="551"
+          y="148"
+          fontSize="9"
+          fill="#e05cd9"
+          textAnchor="middle"
+          fontWeight="600"
+        >
+          Auto-upload &amp; copy link
+        </text>
+      </g>
+    </svg>
+  );
+}
+
 /** A rough Discord-style embed mock */
 function DiscordEmbedMock({ siteName }: { siteName: string }) {
   return (
@@ -237,7 +597,7 @@ export default function Index() {
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center overflow-hidden px-4 py-32 md:py-48 text-center">
+      <section className="relative flex flex-col items-center justify-center overflow-hidden py-32 md:py-48 text-center">
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-0 -translate-x-1/2 h-[500px] w-[800px] rounded-full bg-primary/20 blur-[120px]"
@@ -247,7 +607,7 @@ export default function Index() {
           className="pointer-events-none absolute left-1/4 bottom-0 h-[300px] w-[400px] rounded-full bg-secondary/20 blur-[100px]"
         />
 
-        <div className="relative z-10 max-w-3xl mx-auto">
+        <div className="container mx-auto px-4 relative z-10 max-w-3xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-medium text-primary mb-6">
             ✦ Invite-only image hosting
           </span>
@@ -290,7 +650,7 @@ export default function Index() {
 
       {/* ── STATS ────────────────────────────────────────────────── */}
       <section className="border-y border-border">
-        <div className="container mx-auto grid grid-cols-2 md:grid-cols-4">
+        <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4">
           {[
             {
               value: imageTotal.toLocaleString(),
@@ -329,8 +689,8 @@ export default function Index() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────────────────── */}
-      <section className="py-24 px-4 border-b border-border">
-        <div className="container mx-auto">
+      <section className="py-24 border-b border-border">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
               How it works
@@ -339,17 +699,19 @@ export default function Index() {
               Up and running in minutes
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-            {/* Connector line on desktop */}
+
+          {/* Animated SVG diagram */}
+          <div className="flex justify-center mb-16">
+            <HowItWorksSVG />
+          </div>
+
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
             <div
               aria-hidden
               className="hidden md:block absolute top-8 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-border to-transparent"
             />
             {STEPS.map(({ icon: Icon, step, title, description }) => (
-              <div
-                key={step}
-                className="flex flex-col items-center text-center relative"
-              >
+              <div key={step} className="flex flex-col items-center text-center relative">
                 <div className="relative mb-6">
                   <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center z-10 relative">
                     <Icon className="h-6 w-6 text-primary" />
@@ -358,21 +720,17 @@ export default function Index() {
                     {step.slice(1)}
                   </span>
                 </div>
-                <h3 className="font-semibold text-white text-lg mb-2">
-                  {title}
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-                  {description}
-                </p>
+                <h3 className="font-semibold text-white text-lg mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">{description}</p>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 
       {/* ── FEATURES ─────────────────────────────────────────────── */}
-      <section className="py-24 px-4">
-        <div className="container mx-auto">
+      <section className="py-24">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
               Features
@@ -406,8 +764,8 @@ export default function Index() {
       </section>
 
       {/* ── DISCORD EMBED SHOWCASE ───────────────────────────────── */}
-      <section className="py-24 px-4 border-t border-border">
-        <div className="container mx-auto">
+      <section className="py-24 border-t border-border">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
@@ -444,8 +802,8 @@ export default function Index() {
       </section>
 
       {/* ── SHAREX SPOTLIGHT ─────────────────────────────────────── */}
-      <section className="py-24 px-4 border-t border-border bg-card/30">
-        <div className="container mx-auto">
+      <section className="py-24 border-t border-border bg-card/30">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Code block */}
             <div className="order-2 lg:order-1">
@@ -507,7 +865,7 @@ export default function Index() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────── */}
-      <section className="py-24 px-4 border-t border-border">
+      <section className="py-24 border-t border-border">
         <div className="container mx-auto max-w-2xl">
           <div className="text-center mb-12">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
@@ -526,7 +884,7 @@ export default function Index() {
       </section>
 
       {/* ── CTA BANNER ───────────────────────────────────────────── */}
-      <section className="py-24 px-4 border-t border-border relative overflow-hidden">
+      <section className="py-24 border-t border-border relative overflow-hidden">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10"

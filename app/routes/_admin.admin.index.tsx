@@ -4,17 +4,17 @@ import { Clock, FileChartColumn, FileImage, Users } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import prettyMs from "pretty-ms";
 import {
-  BarChart,
   Bar,
-  XAxis,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart,
   CartesianGrid,
-  PieChart,
-  Pie,
   Cell,
-  LineChart,
   Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
 } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -110,6 +110,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const COLORS = ["#e05cd9", "#8b5cf6", "#22d3ee", "#16a34a", "#f97316"];
 
+const chartTooltipStyle = {
+  contentStyle: {
+    backgroundColor: "hsl(var(--background))",
+    border: "1px solid hsl(var(--border))",
+    borderRadius: "8px",
+    fontSize: "12px",
+  },
+};
+
 export default function AdminIndex() {
   const {
     usersDaily,
@@ -125,179 +134,279 @@ export default function AdminIndex() {
   useAdminLoader();
 
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>{uptime}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>{users}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Images</CardTitle>
-            <FileImage className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>{images}</CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Space used</CardTitle>
-            <FileChartColumn className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>{bytesUsed}</CardContent>
-        </Card>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Server uptime:{" "}
+          <span className="font-medium text-foreground">{uptime}</span>
+        </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Registrations (7d)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-60">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              className="text-primary"
-            >
-              <BarChart
-                data={usersDaily}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-                />
-                <Tooltip
-                  labelFormatter={(v) => new Date(v).toLocaleDateString()}
-                />
-                <Bar dataKey="count" fill="currentColor" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Uploads (7d)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-60">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              className="text-primary"
-            >
-              <BarChart
-                data={imagesDaily}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-                />
-                <Tooltip
-                  labelFormatter={(v) => new Date(v).toLocaleDateString()}
-                />
-                <Bar dataKey="count" fill="currentColor" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>File Types</CardTitle>
-          </CardHeader>
-          <CardContent className="h-60">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              className="text-primary"
-            >
-              <PieChart>
-                <Pie
-                  dataKey="count"
-                  data={typeCounts}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={(entry) => entry.type}
+
+      <div className="space-y-8">
+        {/* Stat cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Uptime
+                  </p>
+                  <p className="text-2xl font-bold">{uptime}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Users
+                  </p>
+                  <p className="text-2xl font-bold">{users}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Images
+                  </p>
+                  <p className="text-2xl font-bold">{images}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <FileImage className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                    Storage Used
+                  </p>
+                  <p className="text-2xl font-bold">{bytesUsed}</p>
+                </div>
+                <div className="p-2.5 rounded-lg bg-primary/10">
+                  <FileChartColumn className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Registrations (7d)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={usersDaily}
+                  margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
                 >
-                  {typeCounts.map((_, index) => (
-                    <Cell
-                      key={`tc-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v) => new Date(v).getUTCDate().toString()}
+                    tick={{
+                      fontSize: 11,
+                      fill: "hsl(var(--muted-foreground))",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    {...chartTooltipStyle}
+                    labelFormatter={(v) => new Date(v).toLocaleDateString()}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="hsl(var(--primary))"
+                    radius={[3, 3, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Uploads (7d)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={imagesDaily}
+                  margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(v) => new Date(v).getUTCDate().toString()}
+                    tick={{
+                      fontSize: 11,
+                      fill: "hsl(var(--muted-foreground))",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    {...chartTooltipStyle}
+                    labelFormatter={(v) => new Date(v).toLocaleDateString()}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="hsl(var(--primary))"
+                    radius={[3, 3, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                File Types
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    dataKey="count"
+                    data={typeCounts}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={72}
+                    label={(entry) => entry.type.replace("image/", "")}
+                    labelLine={false}
+                  >
+                    {typeCounts.map((_, index) => (
+                      <Cell
+                        key={`tc-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip {...chartTooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                Top Uploaders
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={topUploaders}
+                  margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="hsl(var(--border))"
+                  />
+                  <XAxis
+                    dataKey="username"
+                    tick={{
+                      fontSize: 11,
+                      fill: "hsl(var(--muted-foreground))",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip {...chartTooltipStyle} />
+                  <Bar
+                    dataKey="count"
+                    fill="hsl(var(--primary))"
+                    radius={[3, 3, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Storage trend */}
         <Card>
-          <CardHeader>
-            <CardTitle>Top Uploaders</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Storage Added (7d)
+            </CardTitle>
           </CardHeader>
-          <CardContent className="h-60">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              className="text-primary"
-            >
-              <BarChart
-                data={topUploaders}
-                margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+          <CardContent className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={storageDaily}
+                margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="username" />
-                <Tooltip />
-                <Bar dataKey="count" fill="currentColor" />
-              </BarChart>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(v) => new Date(v).getUTCDate().toString()}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  {...chartTooltipStyle}
+                  labelFormatter={(v) => new Date(v).toLocaleDateString()}
+                  formatter={(value: number) => [prettyBytes(value), "Storage"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Storage Usage (7d)</CardTitle>
-        </CardHeader>
-        <CardContent className="h-60">
-          <ResponsiveContainer
-            width="100%"
-            height="100%"
-            className="text-primary"
-          >
-            <LineChart
-              data={storageDaily}
-              margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-              />
-              <Tooltip
-                labelFormatter={(v) => new Date(v).toLocaleDateString()}
-                formatter={(value: number) => prettyBytes(value)}
-              />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="currentColor"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }

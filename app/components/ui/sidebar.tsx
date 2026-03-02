@@ -1,29 +1,27 @@
-import { Link } from "@remix-run/react";
+import { Link, NavLink } from "@remix-run/react";
 import {
   Bell,
   BellDotIcon,
+  ChevronDown,
+  Code,
   Cog,
   FileQuestion,
+  GitBranch,
   Globe2,
   Home,
   Image,
   Link2,
   LogOut,
   Shield,
-  Code,
-  WandSparkles,
-  ChevronDown,
-  GitBranch,
-  Wrench,
-  TableProperties,
-  User2,
   SquareUser,
+  TableProperties,
   Upload,
+  WandSparkles,
+  Wrench,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaDiscord } from "react-icons/fa";
 
-import { Button } from "~/components/ui/button";
 import { cn, formatNumber } from "~/lib/utils";
 
 import { NotificationTray } from "./notification-tray";
@@ -43,6 +41,43 @@ interface SidebarProps {
   onLinkClick?: () => void;
 }
 
+function NavItem({
+  to,
+  icon: Icon,
+  children,
+  badge,
+  onClick,
+}: {
+  to: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  badge?: string | number;
+  onClick?: () => void;
+}) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full",
+          isActive
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
+        )
+      }
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{children}</span>
+      {badge !== undefined && (
+        <span className="ml-auto bg-secondary text-secondary-foreground rounded-md px-1.5 py-0.5 text-xs font-medium">
+          {badge}
+        </span>
+      )}
+    </NavLink>
+  );
+}
+
 export function Sidebar({
   className,
   user,
@@ -58,299 +93,223 @@ export function Sidebar({
   const removeNotification = (id: string) =>
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
+  const hasNotifications = notifications.length > 0;
+  const activeImageCount = user.images.filter((img) => !img.deleted_at).length;
+  const initials = user.username.slice(0, 2).toUpperCase();
+
+  const bellRef = useRef<HTMLButtonElement>(null);
+  const trayRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showTray) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        !bellRef.current?.contains(e.target as Node) &&
+        !trayRef.current?.contains(e.target as Node)
+      ) {
+        setShowTray(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showTray]);
+
   return (
-    <div className={cn("pb-12 w-64 relative", className)}>
+    <div
+      className={cn("flex flex-col h-full w-64 shrink-0 relative", className)}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+        <Link
+          to="/dashboard/index"
+          onClick={onLinkClick}
+          className="font-bold text-base bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent"
+        >
+          {siteName}
+        </Link>
+        <button
+          ref={bellRef}
+          type="button"
+          onClick={() => setShowTray(!showTray)}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors relative"
+        >
+          {hasNotifications ? (
+            <BellDotIcon className="h-4 w-4 text-primary" />
+          ) : (
+            <Bell className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+
+      {/* Notification tray — fixed so it's not clipped by sidebar width */}
       {showTray && (
-        <NotificationTray
-          notifications={notifications}
-          onRemove={removeNotification}
-        />
+        <div ref={trayRef} className="fixed top-[57px] left-2 z-[200]">
+          <NotificationTray
+            notifications={notifications}
+            onRemove={removeNotification}
+          />
+        </div>
       )}
-      <div className="space-y-4 py-4">
-        <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
-            {siteName}
-            {!user.notifications || user.notifications.length === 0 ? (
-              <Bell
-                className="float-right w-4 m-1 cursor-pointer"
-                onClick={() => setShowTray(!showTray)}
-              />
-            ) : (
-              <BellDotIcon
-                className="float-right w-4 m-1 hover:text-accent cursor-pointer"
-                onClick={() => setShowTray(!showTray)}
-              />
-            )}
-          </h2>
-          <Separator className="my-4" />
-          <div className="space-y-1">
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/dashboard/index" className="flex items-center gap-2">
-                <Home className="h-4 w-4" />
-                Dashboard
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/dashboard/images" className="flex items-center gap-2">
-                <Image className="h-4 w-4" />
-                Images
-                <span className="ml-auto bg-secondary text-secondary-foreground rounded-md px-2 py-0.5 text-xs">
-                  {formatNumber(
-                    user.images.filter((img) => !img.deleted_at).length,
-                  )}
-                </span>
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link
-                to="/dashboard/referrals"
-                className="flex items-center gap-2"
+
+      {/* Nav */}
+      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+        {/* Main section */}
+        <div className="space-y-0.5">
+          <p className="px-3 mb-1.5 text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">
+            Main
+          </p>
+          <NavItem to="/dashboard/index" icon={Home} onClick={onLinkClick}>
+            Dashboard
+          </NavItem>
+          <NavItem
+            to="/dashboard/images"
+            icon={Image}
+            onClick={onLinkClick}
+            badge={formatNumber(activeImageCount)}
+          >
+            Images
+          </NavItem>
+          <NavItem to="/dashboard/referrals" icon={Link2} onClick={onLinkClick}>
+            Referrals
+          </NavItem>
+          <NavItem to="/dashboard/domains" icon={Globe2} onClick={onLinkClick}>
+            Domains
+          </NavItem>
+          <NavItem
+            to="/dashboard/help"
+            icon={FileQuestion}
+            onClick={onLinkClick}
+          >
+            Help
+          </NavItem>
+        </div>
+
+        {/* Upload Config section */}
+        <div className="space-y-0.5">
+          <button
+            type="button"
+            onClick={() => setShowUploadMenu(!showUploadMenu)}
+            className="flex items-center gap-3 px-3 py-1.5 w-full text-xs font-semibold text-muted-foreground/60 hover:text-muted-foreground uppercase tracking-wider transition-colors"
+          >
+            <Wrench className="h-3 w-3 shrink-0" />
+            <span className="flex-1 text-left">Upload Config</span>
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 shrink-0 transition-transform duration-200",
+                showUploadMenu && "rotate-180",
+              )}
+            />
+          </button>
+          {showUploadMenu && (
+            <div className="space-y-0.5">
+              <NavItem
+                to="/dashboard/domain-selector"
+                icon={TableProperties}
+                onClick={onLinkClick}
               >
-                <Link2 className="h-4 w-4" />
-                Referrals
-              </Link>
-            </Button>
-            <Button
-              onClick={() => setShowUploadMenu(!showUploadMenu)}
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <div className="flex items-center gap-2 w-full">
-                <Wrench className="h-4 w-4" />
-                Upload Config
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 ml-auto transition-transform",
-                    showUploadMenu && "rotate-180",
-                  )}
-                />
-              </div>
-            </Button>
-            {showUploadMenu && (
-              <div className="pl-4 space-y-1">
-                <Button
-                  onClick={onLinkClick}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start text-gray-900 dark:text-gray-100"
-                >
-                  <Link
-                    to="/dashboard/domain-selector"
-                    className="flex items-center gap-2"
-                  >
-                    <TableProperties className="h-4 w-4" />
-                    Domain Selector
-                  </Link>
-                </Button>
-                <Button
-                  onClick={onLinkClick}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start text-gray-900 dark:text-gray-100"
-                >
-                  <Link
-                    to="/dashboard/embed"
-                    className="flex items-center gap-2"
-                  >
-                    <Code className="h-4 w-4" />
-                    Embed
-                  </Link>
-                </Button>
-                <Button
-                  onClick={onLinkClick}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start text-gray-900 dark:text-gray-100"
-                >
-                  <Link
-                    to="/dashboard/effects"
-                    className="flex items-center gap-2"
-                  >
-                    <WandSparkles className="h-4 w-4" />
-                    Effects
-                  </Link>
-                </Button>
-                <Button
-                  onClick={onLinkClick}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start text-gray-900 dark:text-gray-100"
-                >
-                  <Link
-                    to="/dashboard/triggers"
-                    className="flex items-center gap-2"
-                  >
-                    <GitBranch className="h-4 w-4" />
-                    Triggers
-                    <span className="ml-auto bg-secondary text-secondary-foreground rounded-md px-2 py-0.5 text-xs">
-                      BETA
-                    </span>
-                  </Link>
-                </Button>
-                <Button
-                  onClick={onLinkClick}
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start text-gray-900 dark:text-gray-100"
-                >
-                  <Link
-                    to="/dashboard/upload-config/settings"
-                    className="flex items-center gap-2"
-                  >
-                    <Cog className="h-4 w-4" />
-                    Config
-                  </Link>
-                </Button>
-              </div>
-            )}
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/dashboard/domains" className="flex items-center gap-2">
-                <Globe2 className="h-4 w-4" />
-                Domains
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/dashboard/help" className="flex items-center gap-2">
-                <FileQuestion className="h-4 w-4" />
-                Help
-              </Link>
-            </Button>
-          </div>
+                Domain Selector
+              </NavItem>
+              <NavItem to="/dashboard/embed" icon={Code} onClick={onLinkClick}>
+                Embed
+              </NavItem>
+              <NavItem
+                to="/dashboard/effects"
+                icon={WandSparkles}
+                onClick={onLinkClick}
+              >
+                Effects
+              </NavItem>
+              <NavItem
+                to="/dashboard/triggers"
+                icon={GitBranch}
+                onClick={onLinkClick}
+                badge="BETA"
+              >
+                Triggers
+              </NavItem>
+              <NavItem
+                to="/dashboard/upload-config/settings"
+                icon={Cog}
+                onClick={onLinkClick}
+              >
+                Config
+              </NavItem>
+            </div>
+          )}
         </div>
       </div>
-      <div className="absolute bottom-4 left-0 right-0 px-3">
-        <div className="space-y-1">
-          <Button
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <ThemeToggle />
-          </Button>
-          <Button
-            onClick={onLinkClick}
-            asChild
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <Link to="/dashboard/upload" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload
-            </Link>
-          </Button>
-          <Button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            variant="ghost"
-            className="w-full justify-start text-gray-900 dark:text-gray-100"
-          >
-            <div className="flex items-center gap-2 w-full">
-              <User2 className="h-4 w-4" />
-              {user.username}
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 ml-auto transition-transform",
-                  showUserMenu && "rotate-180",
-                )}
-              />
-            </div>
-          </Button>
+
+      {/* Bottom section */}
+      <div className="shrink-0 border-t border-border px-3 py-3 space-y-0.5">
+        <NavItem to="/dashboard/upload" icon={Upload} onClick={onLinkClick}>
+          Upload
+        </NavItem>
+
+        <div className="py-0.5">
+          <ThemeToggle />
         </div>
-        {showUserMenu && (
-          <div className="pl-4 space-y-1">
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/profile/me" className="flex items-center gap-2">
-                <SquareUser className="h-4 w-4" />
-                Profile
-              </Link>
-            </Button>
-            {user.is_admin ? (
-              <Button
-                onClick={onLinkClick}
-                asChild
-                variant="ghost"
-                className="w-full justify-start text-gray-900 dark:text-gray-100"
-              >
-                <Link to="/admin/index" className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  Admin Dashboard
-                </Link>
-              </Button>
-            ) : (
-              <></>
+
+        <Separator className="my-2" />
+
+        {/* User menu trigger */}
+        <button
+          type="button"
+          onClick={() => setShowUserMenu(!showUserMenu)}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium w-full text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+        >
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
+            {initials}
+          </div>
+          <span className="flex-1 text-left truncate">{user.username}</span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 transition-transform duration-200",
+              showUserMenu && "rotate-180",
             )}
-            <Button
+          />
+        </button>
+
+        {showUserMenu && (
+          <div className="space-y-0.5 pt-0.5">
+            <NavItem to="/profile/me" icon={SquareUser} onClick={onLinkClick}>
+              Profile
+            </NavItem>
+            {user.is_admin && (
+              <NavItem to="/admin/index" icon={Shield} onClick={onLinkClick}>
+                Admin Dashboard
+              </NavItem>
+            )}
+            <NavItem to="/dashboard/settings" icon={Cog} onClick={onLinkClick}>
+              Settings
+            </NavItem>
+            <Link
+              to="/logout"
               onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start text-gray-900 dark:text-gray-100"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
             >
-              <Link
-                to="/dashboard/settings"
-                className="flex items-center gap-2"
-              >
-                <Cog className="h-4 w-4" />
-                Settings
-              </Link>
-            </Button>
-            <Button
-              onClick={onLinkClick}
-              asChild
-              variant="ghost"
-              className="w-full justify-start hover:bg-red-700 hover:text-white text-gray-900 dark:text-gray-100"
-            >
-              <Link to="/logout" className="flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Log out
-              </Link>
-            </Button>
+              <LogOut className="h-4 w-4 shrink-0" />
+              Log out
+            </Link>
           </div>
         )}
 
-        <div className="mt-2 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-3">
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 text-xs text-muted-foreground/60 px-1">
           <span>v{version}</span>
           <Link
             to="https://discord.gg/screenshot"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-foreground"
+            className="hover:text-foreground transition-colors"
           >
-            <FaDiscord className="h-4 w-4" />
+            <FaDiscord className="h-3.5 w-3.5" />
           </Link>
-          <div className="flex items-center gap-2">
-            <Link to="/tos" className="underline">
-              TOS
-            </Link>
-          </div>
+          <Link
+            to="/tos"
+            className="underline hover:text-foreground transition-colors"
+          >
+            TOS
+          </Link>
         </div>
       </div>
     </div>
