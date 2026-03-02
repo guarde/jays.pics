@@ -26,8 +26,6 @@ export const perms = createPermissions({
       "CanComment",
       "CanUpdateUsername",
       "CanUploadImages",
-      "CanDonateDomains",
-      "CanMakeReferrals",
     ],
     Admin: [
       "CanBlockUploads",

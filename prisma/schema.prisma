@@ -21,7 +21,7 @@ model User {
 
   avatar_url String?
 
-  permissions BigInt  @default(59072)
+  permissions BigInt  @default(9920)
   locked      Boolean @default(false)
 
   badges String @default("[{\"name\":\"user\",\"text\":\"User\"}]")
