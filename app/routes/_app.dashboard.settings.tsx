@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { can, perms } from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
 import { getDiscordAvatarUrl } from "~/services/discord";
 import { uploadToS3 } from "~/services/s3.server";
@@ -44,6 +45,8 @@ export async function action({ request }: ActionFunctionArgs) {
   let updated = false;
 
   if (type === "update_username") {
+    if (!can(user!.permissions, perms.bits.CanUpdateUsername))
+      return redirect("/dashboard/settings");
     const username = formData.get("username");
     if (typeof username === "string" && username.length > 0) {
       const changedAt = Date.parse(
@@ -68,6 +71,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "update_avatar") {
+    if (!can(user!.permissions, perms.bits.CanUpdateProfilePicture))
+      return redirect("/dashboard/settings");
     const file = formData.get("avatar");
     if (file && file instanceof File && file.size > 0) {
       const ext = file.type.split("/")[1] ?? "png";

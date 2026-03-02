@@ -27,6 +27,7 @@ import { Input } from "~/components/ui/input";
 import { Sidebar } from "~/components/ui/sidebar";
 import { SidebarGuest } from "~/components/ui/sidebar-guest";
 import { Textarea } from "~/components/ui/textarea";
+import { can, perms } from "~/lib/permissions";
 import { templateReplacer } from "~/lib/utils";
 import { prisma } from "~/services/database.server";
 import { getSession, getUserBySession } from "~/services/session.server";
@@ -89,7 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     user = {
       id: "",
       username: "Guest",
-      is_admin: false,
+      permissions: "0",
       notifications: [],
       images: [],
     };
@@ -115,6 +116,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const type = formData.get("type");
 
   if (type === "create_comment") {
+    if (!can(user!.permissions, perms.bits.CanComment))
+      return redirect(`/i/${params.id}`);
     const content = formData.get("content");
     if (typeof content !== "string" || content.length === 0) {
       return redirect(`/i/${params.id}`);
@@ -141,13 +144,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (
       comment.commenter_id !== user!.id &&
       comment.image.uploader_id !== user!.id &&
-      !user!.is_admin
+      !can(user!.permissions, perms.bits.CanViewReports)
     )
       return redirect(`/i/${params.id}`);
     await prisma.imageComment.delete({ where: { id: commentId } });
   }
 
   if (type === "report_image") {
+    if (!can(user!.permissions, perms.bits.CanMakeReport))
+      return redirect(`/i/${params.id}`);
     const reasonType = formData.get("reason_type");
     const detail = formData.get("detail");
     if (typeof reasonType !== "string") return redirect(`/i/${params.id}`);
@@ -238,7 +243,7 @@ export default function ImagePage() {
           user={{
             id: user!.id,
             username: user!.username,
-            is_admin: user!.is_admin,
+            permissions: user!.permissions,
             notifications: user!.notifications,
             images: user!.images,
           }}
@@ -464,7 +469,7 @@ export default function ImagePage() {
                       </div>
                       {(user!.id === c.commenter_id ||
                         isOwner ||
-                        user!.is_admin) && (
+                        can(user!.permissions, perms.bits.CanViewReports)) && (
                         <ConfirmDialog
                           onConfirm={() => {
                             const fd = new FormData();

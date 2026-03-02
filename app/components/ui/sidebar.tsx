@@ -22,6 +22,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { FaDiscord } from "react-icons/fa";
 
+import { can, perms } from "~/lib/permissions";
 import { cn, formatNumber } from "~/lib/utils";
 
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
@@ -34,7 +35,7 @@ interface SidebarProps {
   user: {
     id: string;
     username: string;
-    is_admin: boolean;
+    permissions: string;
     notifications: any[];
     images: any[];
   };
@@ -279,7 +280,7 @@ export function Sidebar({
             <NavItem to="/profile/me" icon={SquareUser} onClick={onLinkClick}>
               Profile
             </NavItem>
-            {user.is_admin && (
+            {can(user.permissions, perms.bits.CanViewAdminDashboard) && (
               <NavItem to="/admin/index" icon={Shield} onClick={onLinkClick}>
                 Admin Dashboard
               </NavItem>

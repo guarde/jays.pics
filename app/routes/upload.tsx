@@ -6,6 +6,7 @@ import {
 } from "@remix-run/node";
 import { z } from "zod";
 
+import { can, perms } from "~/lib/permissions";
 import { generateInvisibleURL } from "~/lib/utils";
 import { prisma } from "~/services/database.server";
 import { uploadToS3 } from "~/services/s3.server";
@@ -71,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
       id: true,
       space_used: true,
       max_space: true,
+      permissions: true,
       upload_preferences: true,
     },
   });
@@ -79,6 +81,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({
       success: false,
       message: "You are not authorised",
+    });
+  }
+
+  if (!can(user.permissions.toString(), perms.bits.CanUploadImages)) {
+    return json({
+      success: false,
+      message: "You are not authorised to upload images",
     });
   }
 

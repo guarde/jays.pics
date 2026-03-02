@@ -8,8 +8,9 @@ import { cn } from "~/lib/utils";
 
 interface DashboardNavbarProps {
   user: {
+    id: string;
     username: string;
-    is_admin: boolean;
+    permissions: string;
     notifications: { id: string; content: string; created_at: string }[];
     images: any[];
   };

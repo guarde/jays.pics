@@ -13,7 +13,7 @@ async function main() {
       username: "System",
       password: "",
       badges: JSON.stringify([{ name: "sys", text: "SYSTEM" }]),
-      is_admin: true,
+      permissions: 65535n,
       referrer_profile: {
         create: {},
       },

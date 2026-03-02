@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { can, perms } from "~/lib/permissions";
 import { cn } from "~/lib/utils";
 
 import { Separator } from "./separator";
@@ -22,7 +23,7 @@ interface SidebarAdminProps {
   user: {
     username: string;
     images: any[];
-    is_admin: boolean;
+    permissions: string;
   };
   siteName: string;
   onLinkClick?: () => void;
@@ -65,6 +66,7 @@ export function SidebarAdmin({
   onLinkClick,
 }: Readonly<SidebarAdminProps>) {
   const initials = user.username.slice(0, 2).toUpperCase();
+  const p = user.permissions;
 
   return (
     <div className={cn("flex flex-col h-full w-64 relative", className)}>
@@ -89,12 +91,16 @@ export function SidebarAdmin({
         <NavItem to="/admin/index" icon={Home} onClick={onLinkClick}>
           Dashboard
         </NavItem>
-        <NavItem to="/admin/users" icon={Users} onClick={onLinkClick}>
-          Users
-        </NavItem>
-        <NavItem to="/admin/images" icon={Images} onClick={onLinkClick}>
-          Images
-        </NavItem>
+        {can(p, perms.bits.CanManageUsers) && (
+          <NavItem to="/admin/users" icon={Users} onClick={onLinkClick}>
+            Users
+          </NavItem>
+        )}
+        {can(p, perms.bits.CanViewReports) && (
+          <NavItem to="/admin/images" icon={Images} onClick={onLinkClick}>
+            Images
+          </NavItem>
+        )}
         <NavItem to="/admin/domains" icon={Globe2} onClick={onLinkClick}>
           Domains
         </NavItem>
@@ -105,15 +111,22 @@ export function SidebarAdmin({
         >
           Subscriptions
         </NavItem>
-        <NavItem to="/admin/logs" icon={Logs} onClick={onLinkClick}>
-          Logs
-        </NavItem>
-        <NavItem to="/admin/errors" icon={CircleX} onClick={onLinkClick}>
-          Errors
-        </NavItem>
-        <NavItem to="/admin/site" icon={PanelsTopLeft} onClick={onLinkClick}>
-          Site
-        </NavItem>
+        {can(p, perms.bits.CanSeeErrors) && (
+          <>
+            <NavItem to="/admin/logs" icon={Logs} onClick={onLinkClick}>
+              Logs
+            </NavItem>
+            <NavItem to="/admin/errors" icon={CircleX} onClick={onLinkClick}>
+              Errors
+            </NavItem>
+          </>
+        )}
+        {(can(p, perms.bits.CanMakeAnnouncement) ||
+          can(p, perms.bits.CanBlockUploads)) && (
+          <NavItem to="/admin/site" icon={PanelsTopLeft} onClick={onLinkClick}>
+            Site
+          </NavItem>
+        )}
         <NavItem
           to="/admin/aws-pricing"
           icon={DollarSign}

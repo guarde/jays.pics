@@ -30,9 +30,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  can,
+  perms,
+  PERMISSION_LABELS,
+  PERMISSION_DESCRIPTIONS,
+} from "~/lib/permissions";
 import { prisma } from "~/services/database.server";
+import { getSession, getUserBySession } from "~/services/session.server";
+
+const FLAG_NAMES = Object.keys(perms.bits) as Array<keyof typeof perms.bits>;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const viewer = await getUserBySession(session);
+  if (!viewer || !can(viewer.permissions, perms.bits.CanManageUsers))
+    return redirect("/admin/index");
+
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
   const search = url.searchParams.get("search") ?? "";
@@ -50,6 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       avatar_url: true,
       last_login_ip: true,
       locked: true,
+      permissions: true,
     },
   });
 
@@ -64,6 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...userData,
     space_used: Number(userData.space_used),
     max_space: Number(userData.max_space),
+    permissions: userData.permissions.toString(),
   };
 
   const where = {
@@ -97,12 +113,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     sort,
     id: params.id,
     publicDomains,
+    viewerPermissions: viewer.permissions,
   };
 }
 
 export default function AdminProfile() {
-  const { user, images, page, imageCount, search, sort, id, publicDomains } =
-    useLoaderData<typeof loader>();
+  const {
+    user,
+    images,
+    page,
+    imageCount,
+    search,
+    sort,
+    id,
+    publicDomains,
+    viewerPermissions,
+  } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
   const [templates, setTemplates] = useState<string[]>([]);
@@ -115,6 +141,12 @@ export default function AdminProfile() {
       })
       .catch(() => {});
   }, []);
+
+  const canUpdatePerms = can(
+    viewerPermissions,
+    perms.bits.CanUpdatePermissions,
+  );
+  const targetPerms = BigInt(user.permissions);
 
   return (
     <>
@@ -145,6 +177,60 @@ export default function AdminProfile() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Permissions Grid */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Permissions</CardTitle>
+          <CardDescription>
+            {canUpdatePerms
+              ? "Check or uncheck flags to change what this user can do."
+              : "You don't have permission to edit permissions."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form method="post" className="space-y-4">
+            <input type="hidden" name="type" value="update_permissions" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              {FLAG_NAMES.map((flag) => {
+                const hasFlag = can(targetPerms, perms.bits[flag]);
+                return (
+                  <label
+                    key={flag}
+                    className={`flex items-start gap-3 rounded-lg border border-border/60 px-3 py-2.5 transition-colors ${
+                      canUpdatePerms
+                        ? "cursor-pointer hover:bg-accent/30"
+                        : "opacity-60"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      name={flag}
+                      value="on"
+                      defaultChecked={hasFlag}
+                      disabled={!canUpdatePerms}
+                      className="mt-0.5 accent-primary shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-none mb-0.5">
+                        {PERMISSION_LABELS[flag]}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-snug">
+                        {PERMISSION_DESCRIPTIONS[flag]}
+                      </p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+            {canUpdatePerms && (
+              <Button type="submit" size="sm">
+                Save Permissions
+              </Button>
+            )}
+          </Form>
         </CardContent>
       </Card>
 
@@ -434,6 +520,11 @@ const embedUpdateSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const viewer = await getUserBySession(session);
+  if (!viewer || !can(viewer.permissions, perms.bits.CanManageUsers))
+    return redirect("/admin/index");
+
   const user = await prisma.user.findFirst({ where: { id: params.id } });
   if (user === null)
     return {
@@ -453,7 +544,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const requestType = formData.get("type");
   formData.delete("type");
 
-  if (requestType === "update_embed") {
+  if (requestType === "update_permissions") {
+    if (!can(viewer.permissions, perms.bits.CanUpdatePermissions))
+      return redirect(`/admin/user/${params.id}`);
+
+    const flagNames = Object.keys(perms.bits) as Array<keyof typeof perms.bits>;
+    let newPermissions = 0n;
+    for (const flag of flagNames) {
+      if (formData.get(flag) === "on") {
+        newPermissions |= perms.bits[flag];
+      }
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { permissions: newPermissions },
+    });
+    await prisma.notification.create({
+      data: {
+        receiver_id: user.id,
+        content: "Your permissions were updated by an admin.",
+      },
+    });
+    return null;
+  } else if (requestType === "update_embed") {
     result = embedUpdateSchema.safeParse(payload);
     if (!result.success) {
       const error = result.error.flatten();
@@ -480,6 +593,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
     });
   } else if (requestType === "force_username") {
+    if (!can(viewer.permissions, perms.bits.CanForceUpdateUsername))
+      return redirect(`/admin/user/${params.id}`);
     const username = formData.get("username");
     if (typeof username === "string" && username.length > 0) {
       await prisma.user.update({
@@ -525,6 +640,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     return null;
   } else if (requestType === "update_space") {
+    if (!can(viewer.permissions, perms.bits.CanUpdateStorageLimit))
+      return redirect(`/admin/user/${params.id}`);
     const maxSpaceRaw = formData.get("max_space");
     const maxSpace = maxSpaceRaw ? BigInt(maxSpaceRaw.toString()) : 0n;
     if (maxSpace > 0) {
