@@ -5,10 +5,11 @@ import {
   redirect,
 } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { GitBranch, Save, Tag, Type } from "lucide-react";
+import { GitBranch, Save, Tag, Trash2, Type } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import ReactFlow, {
   Background,
+  BackgroundVariant,
   Controls,
   ReactFlowProvider,
   addEdge,
@@ -104,6 +105,69 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return json({ ok: true });
 }
+
+// Custom ReactFlow styles injected as a style tag to override defaults
+const FLOW_STYLES = `
+  .react-flow__node {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    color: hsl(var(--foreground));
+    font-size: 12px;
+    font-family: inherit;
+    padding: 8px 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .react-flow__node.selected,
+  .react-flow__node:focus {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 1px hsl(var(--primary));
+  }
+  .react-flow__node-input {
+    background: hsl(var(--primary) / 0.15);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+  .react-flow__handle {
+    background: hsl(var(--primary));
+    border: 2px solid hsl(var(--background));
+    width: 8px;
+    height: 8px;
+  }
+  .react-flow__edge-path {
+    stroke: hsl(var(--primary) / 0.6);
+    stroke-width: 2;
+  }
+  .react-flow__edge.selected .react-flow__edge-path {
+    stroke: hsl(var(--primary));
+  }
+  .react-flow__controls {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: none;
+  }
+  .react-flow__controls-button {
+    background: hsl(var(--card));
+    border: none;
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+    fill: hsl(var(--muted-foreground));
+    width: 28px;
+    height: 28px;
+  }
+  .react-flow__controls-button:hover {
+    background: hsl(var(--accent) / 0.5);
+    color: hsl(var(--foreground));
+    fill: hsl(var(--foreground));
+  }
+  .react-flow__controls-button:last-child {
+    border-bottom: none;
+  }
+  .react-flow__attribution {
+    display: none;
+  }
+`;
 
 export default function Triggers() {
   const { trigger } = useLoaderData<typeof loader>();
@@ -216,9 +280,9 @@ export default function Triggers() {
     setSelectedNode((n) => (n ? { ...n, data: { ...n.data, ...data } } : n));
   }
 
-  function handleDelete() {
-    if (!contextMenu) return;
-    const id = contextMenu.nodeId;
+  function handleDelete(nodeId?: string) {
+    const id = nodeId ?? contextMenu?.nodeId;
+    if (!id) return;
     setNodes((nds) => nds.filter((n) => n.id !== id));
     setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     if (selectedNode?.id === id) setSelectedNode(null);
@@ -240,43 +304,49 @@ export default function Triggers() {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const selectedAction = selectedNode
+  // Capitalised so React treats it as a component, not a DOM element
+  const SelectedActionComponent = selectedNode
     ? ACTION_COMPONENTS[selectedNode.data.actionType]
     : null;
   const selectedMeta = selectedNode
     ? ACTION_META[selectedNode.data.actionType]
     : null;
+  const SelectedMetaIcon = selectedMeta?.icon ?? null;
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="flex flex-col h-full">
+      <style dangerouslySetInnerHTML={{ __html: FLOW_STYLES }} />
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <GitBranch className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-semibold">Triggers</h1>
-            <Badge variant="secondary" className="text-xs">
-              BETA
-            </Badge>
+      <div className="border-b border-border px-8 py-5 shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <GitBranch className="h-5 w-5 text-primary" />
+              <h1 className="text-xl font-semibold">Triggers</h1>
+              <Badge variant="secondary" className="text-xs">
+                BETA
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Automate actions when images are uploaded
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Automate actions when images are uploaded
-          </p>
+          <Button onClick={handleSave} size="sm" className="gap-2 text-white">
+            <Save className="h-3.5 w-3.5" />
+            {saved ? "Saved!" : "Save"}
+          </Button>
         </div>
-        <Button onClick={handleSave} size="sm" className="gap-2 text-white">
-          <Save className="h-3.5 w-3.5" />
-          {saved ? "Saved!" : "Save"}
-        </Button>
       </div>
 
-      {/* Editor */}
-      <div className="flex h-[600px] border border-border rounded-lg overflow-hidden">
+      {/* Editor — fills remaining height */}
+      <div className="flex flex-1 overflow-hidden">
         {/* Action palette */}
         <aside
           className="w-52 border-r border-border bg-card p-3 space-y-2 shrink-0 overflow-y-auto"
           onDragOver={onDragOver}
         >
-          <p className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <p className="px-1 text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider mb-3">
             Actions
           </p>
           {AVAILABLE_ACTIONS.map((type) => {
@@ -327,64 +397,69 @@ export default function Triggers() {
               onPaneClick={() => setContextMenu(null)}
               fitView
             >
-              <Background color="hsl(var(--border))" />
+              <Background
+                color="hsl(var(--border))"
+                variant={BackgroundVariant.Dots}
+                gap={20}
+                size={1}
+              />
               <Controls />
             </ReactFlow>
           </ReactFlowProvider>
 
-          {/* Context menu */}
+          {/* Right-click context menu */}
           {contextMenu && (
             <div
-              className="absolute z-50 bg-background border border-border rounded-lg shadow-lg overflow-hidden py-1 min-w-[140px]"
+              className="absolute z-50 bg-card border border-border rounded-lg shadow-lg overflow-hidden py-1 min-w-[140px]"
               style={{ top: contextMenu.y - 40, left: contextMenu.x - 20 }}
             >
               <button
-                className="block px-4 py-2 w-full text-left text-sm hover:bg-accent/50 text-destructive hover:text-destructive transition-colors"
-                onClick={handleDelete}
+                className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm hover:bg-accent/50 text-destructive hover:text-destructive transition-colors"
+                onClick={() => handleDelete(contextMenu.nodeId)}
               >
+                <Trash2 className="h-3.5 w-3.5" />
                 Delete node
               </button>
             </div>
           )}
         </div>
 
-        {/* Config panel */}
+        {/* Config panel — shown when a node is selected */}
         {selectedNode && (
           <aside className="w-72 border-l border-border bg-card shrink-0 overflow-y-auto">
             <div className="px-4 py-4 border-b border-border">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">
+              <p className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5">
                 Configure Action
               </p>
-              <div className="flex items-center gap-2 mt-1.5">
-                {selectedMeta?.icon && (
+              <div className="flex items-center gap-2">
+                {SelectedMetaIcon && (
                   <div className="p-1.5 rounded-md bg-primary/10">
-                    <selectedMeta.icon className="h-3.5 w-3.5 text-primary" />
+                    <SelectedMetaIcon className="h-3.5 w-3.5 text-primary" />
                   </div>
                 )}
                 <p className="text-sm font-semibold">
                   {selectedMeta?.label ?? selectedNode.data.actionType}
                 </p>
               </div>
+              {selectedMeta?.description && (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {selectedMeta.description}
+                </p>
+              )}
             </div>
-            <div className="p-4 space-y-3">
-              {selectedAction && (
-                <selectedAction
+            <div className="p-4 space-y-4">
+              {SelectedActionComponent && (
+                <SelectedActionComponent
                   data={selectedNode.data}
                   update={updateSelected}
                 />
               )}
               <button
                 type="button"
-                className="text-xs text-destructive hover:underline mt-2"
-                onClick={() => {
-                  const id = selectedNode.id;
-                  setNodes((nds) => nds.filter((n) => n.id !== id));
-                  setEdges((eds) =>
-                    eds.filter((e) => e.source !== id && e.target !== id),
-                  );
-                  setSelectedNode(null);
-                }}
+                className="flex items-center gap-1.5 text-xs text-destructive hover:underline"
+                onClick={() => handleDelete(selectedNode.id)}
               >
+                <Trash2 className="h-3 w-3" />
                 Remove this action
               </button>
             </div>

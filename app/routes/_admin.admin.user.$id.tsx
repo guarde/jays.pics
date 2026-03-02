@@ -49,7 +49,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       max_space: true,
       avatar_url: true,
       last_login_ip: true,
+      locked: true,
     },
+  });
+
+  const publicDomains = await prisma.uRL.findMany({
+    where: { public: true, progress: "DONE" },
+    select: { url: true },
   });
 
   if (userData === null) return redirect("/admin/index");
@@ -82,11 +88,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const imageCount = await prisma.image.count({ where });
 
-  return { user, images, page, imageCount, search, sort, id: params.id };
+  return {
+    user,
+    images,
+    page,
+    imageCount,
+    search,
+    sort,
+    id: params.id,
+    publicDomains,
+  };
 }
 
 export default function AdminProfile() {
-  const { user, images, page, imageCount, search, sort, id } =
+  const { user, images, page, imageCount, search, sort, id, publicDomains } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
 
@@ -336,21 +351,73 @@ export default function AdminProfile() {
         />
       </Card>
 
-      <Card className="mb-8 border-red-900 ">
+      {/* Domain management */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Domain Selection</CardTitle>
+          <CardDescription>
+            Domains this user uploads to. Overrides their own selection.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form method="post" className="space-y-3">
+            <Input type="hidden" name="type" value="update_user_domains" />
+            <div className="flex flex-wrap gap-2">
+              {publicDomains.map((d) => {
+                const isSelected = (
+                  user.upload_preferences?.urls ?? []
+                ).includes(d.url);
+                return (
+                  <label
+                    key={d.url}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      name="domains"
+                      value={d.url}
+                      defaultChecked={isSelected}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm font-mono">{d.url}</span>
+                  </label>
+                );
+              })}
+              {publicDomains.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No public domains configured.
+                </p>
+              )}
+            </div>
+            <Button type="submit" size="sm">
+              Save Domains
+            </Button>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8 border-red-900">
         <CardHeader>
           <CardTitle>Danger Zone</CardTitle>
           <CardDescription className="text-red-700">
             <i>These actions can be catastrophic</i>
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex gap-2">
           <Form method="post">
-            <Input className="hidden" value={"danger_zone"} name="type" />
+            <Input
+              type="hidden"
+              name="type"
+              value={user.locked ? "unlock_account" : "lock_account"}
+            />
+            <Button
+              type="submit"
+              variant={user.locked ? "outline" : "destructive"}
+            >
+              {user.locked ? "Unlock Account" : "Lock Account"}
+            </Button>
           </Form>
-          <div className="">
-            <Button>Lock Account</Button>
-            <Button className="ml-2">Purge Images</Button>
-          </div>
+          <Button variant="destructive">Purge Images</Button>
         </CardContent>
       </Card>
     </>
@@ -478,6 +545,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (typeof imageId === "string") {
       await prisma.image.delete({ where: { id: imageId } });
     }
+    return null;
+  } else if (requestType === "lock_account") {
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { locked: true },
+    });
+    await prisma.notification.create({
+      data: {
+        receiver_id: user!.id,
+        content: "Your account has been locked by an admin.",
+      },
+    });
+    return null;
+  } else if (requestType === "unlock_account") {
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { locked: false },
+    });
+    await prisma.notification.create({
+      data: {
+        receiver_id: user!.id,
+        content: "Your account has been unlocked by an admin.",
+      },
+    });
+    return null;
+  } else if (requestType === "update_user_domains") {
+    const domains = formData.getAll("domains").map(String);
+    await prisma.uploaderPreferences.update({
+      where: { userId: user!.id },
+      data: { urls: domains },
+    });
     return null;
   }
 }

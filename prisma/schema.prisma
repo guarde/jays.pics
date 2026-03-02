@@ -22,6 +22,7 @@ model User {
   avatar_url String?
 
   is_admin Boolean @default(false)
+  locked   Boolean @default(false)
 
   badges String @default("[{\"name\":\"user\",\"text\":\"User\"}]")
 

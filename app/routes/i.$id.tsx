@@ -7,6 +7,7 @@ import {
 } from "@remix-run/node";
 import {
   Form,
+  Link,
   MetaFunction,
   useFetcher,
   useLoaderData,
@@ -329,9 +330,12 @@ export default function ImagePage() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">
+                  <Link
+                    to={`/profile/${data.uploader.username}`}
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
                     {data.uploader.username}
-                  </p>
+                  </Link>
                   <p className="text-xs text-muted-foreground">Uploader</p>
                 </div>
               </div>

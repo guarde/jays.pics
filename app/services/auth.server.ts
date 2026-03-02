@@ -84,6 +84,17 @@ authenticator.use(
       });
     }
 
+    if (user.locked) {
+      throw new FormError("Locked", {
+        payload,
+        formErrors: [],
+        fieldErrors: {
+          username: "This account has been locked. Please contact support.",
+          password: "",
+        },
+      });
+    }
+
     await prisma.user.update({
       where: { id: user.id },
       data: {
