@@ -229,6 +229,7 @@ export default function Profile() {
   const fetcher = useFetcher();
   const { showToast } = useToast();
   const [commentList, setCommentList] = useState(comments);
+  const [bannerError, setBannerError] = useState(false);
 
   const isOwner = viewer.id === user.id;
   const isLoggedIn = viewer.id !== "";
@@ -258,11 +259,12 @@ export default function Profile() {
         {/* Banner + avatar wrapper */}
         <div className="relative">
           <div className="h-48 rounded-xl relative overflow-hidden">
-            {discordBannerUrl ? (
+            {discordBannerUrl && !bannerError ? (
               <img
                 src={discordBannerUrl}
                 alt="Discord banner"
                 className="absolute inset-0 w-full h-full object-cover"
+                onError={() => setBannerError(true)}
               />
             ) : (
               <>
