@@ -115,9 +115,9 @@ export default function AdminAWSPricing() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">AWS Cost Estimate</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Estimated monthly S3 costs based on current usage in region{" "}
+        <h1 className="text-xl font-semibold">AWS Cost Estimate</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Estimated monthly S3 costs for region{" "}
           <code className="bg-muted px-1 rounded text-xs">{data.region}</code>.
           Request and transfer figures are estimates.
         </p>

@@ -1,23 +1,9 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
+import { CreditCard } from "lucide-react";
 import prettyBytes from "pretty-bytes";
 
 import { PAGE_SIZE, Pagination } from "~/components/pagination";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import { prisma } from "~/services/database.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -40,47 +26,67 @@ export default function AdminSubscriptions() {
   const { count, subs, page } = useLoaderData<typeof loader>();
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>Storage Subscriptions</CardTitle>
-        <CardDescription>There are {count} subscriptions</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">User</TableHead>
-              <TableHead>Storage</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Created At</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold">Subscriptions</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {count} storage subscription{count !== 1 ? "s" : ""}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+          <CreditCard className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold">Storage Subscriptions</h2>
+          <span className="ml-1 text-xs bg-secondary text-secondary-foreground rounded-md px-1.5 py-0.5 font-medium">
+            {count}
+          </span>
+        </div>
+        {subs.length === 0 ? (
+          <p className="text-sm text-muted-foreground px-5 py-8 text-center">
+            No subscriptions
+          </p>
+        ) : (
+          <div className="divide-y divide-border/50">
             {subs.map((sub) => (
-              <TableRow key={sub.id}>
-                <TableCell className="font-medium">
-                  <Link to={`/admin/user/${sub.user.id}`}>
+              <div
+                key={sub.id}
+                className="flex items-center justify-between px-5 py-3"
+              >
+                <div className="flex items-center gap-3">
+                  <Link
+                    to={`/admin/user/${sub.user.id}`}
+                    className="text-sm font-medium hover:text-primary transition-colors"
+                  >
                     {sub.user.username}
                   </Link>
-                </TableCell>
-                <TableCell>{prettyBytes(Number(sub.storage))}</TableCell>
-                <TableCell>
-                  {sub.cancelled_at ? "Cancelled" : "Active"}
-                </TableCell>
-                <TableCell className="text-right">
-                  {new Date(sub.created_at).toLocaleDateString()} @{" "}
-                  {new Date(sub.created_at).toLocaleTimeString()}
-                </TableCell>
-              </TableRow>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded font-medium border ${
+                      sub.cancelled_at
+                        ? "bg-red-500/10 text-red-400 border-red-500/20"
+                        : "bg-green-500/10 text-green-400 border-green-500/20"
+                    }`}
+                  >
+                    {sub.cancelled_at ? "Cancelled" : "Active"}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {prettyBytes(sub.storage)}
+                  </span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(sub.created_at).toLocaleDateString()}
+                </span>
+              </div>
             ))}
-          </TableBody>
-        </Table>
-        <Pagination
-          path="/admin/subscriptions"
-          currentPage={page}
-          totalCount={count}
-        />
-      </CardContent>
-    </Card>
+          </div>
+        )}
+      </div>
+
+      <Pagination
+        path="/admin/subscriptions"
+        currentPage={page}
+        totalCount={count}
+      />
+    </div>
   );
 }
