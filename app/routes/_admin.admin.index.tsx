@@ -1,8 +1,15 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Clock, FileChartColumn, FileImage, Users } from "lucide-react";
+import { useLoaderData, useRevalidator } from "@remix-run/react";
+import {
+  Clock,
+  FileChartColumn,
+  FileImage,
+  RefreshCw,
+  Users,
+} from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import prettyMs from "pretty-ms";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -119,6 +126,8 @@ const chartTooltipStyle = {
   },
 };
 
+const REFRESH_INTERVAL = 30_000;
+
 export default function AdminIndex() {
   const {
     usersDaily,
@@ -133,15 +142,38 @@ export default function AdminIndex() {
   } = useLoaderData<typeof loader>();
   useAdminLoader();
 
+  const { revalidate, state } = useRevalidator();
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      revalidate();
+      setLastUpdated(new Date());
+    }, REFRESH_INTERVAL);
+    return () => clearInterval(id);
+  }, [revalidate]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Server uptime:{" "}
-          <span className="font-medium text-foreground">{uptime}</span>
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Server uptime:{" "}
+            <span className="font-medium text-foreground">{uptime}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <RefreshCw
+            className={`h-3 w-3 ${state === "loading" ? "animate-spin text-primary" : ""}`}
+          />
+          <span>
+            {state === "loading"
+              ? "Refreshing…"
+              : `Updated ${lastUpdated.toLocaleTimeString()}`}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-8">
