@@ -16,11 +16,14 @@ module.exports = {
     },
     {
       // graphile-worker background job processor
+      // NOTE: start-worker.sh sources .env and runs graphile-worker with no args.
+      // The -c flag in graphile-worker is for connection string, NOT crontab.
+      // graphile-worker auto-discovers the crontab file from the working directory.
       name: "jays-worker",
-      script: "node_modules/.bin/graphile-worker",
+      script: "start-worker.sh",
+      interpreter: "sh",
       exec_mode: "fork",
       instances: 1,
-      env_file: ".env",
     },
   ],
 };
