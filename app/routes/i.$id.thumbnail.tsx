@@ -23,20 +23,40 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const buffer = Buffer.from(arrayBuffer);
 
   let resized: Buffer;
-  if (image.type === "image/gif") {
-    resized = await sharp(buffer, { animated: true })
-      .resize({ width: intSize, height: intSize, fit: "inside" })
-      .gif()
-      .toBuffer();
-  } else {
-    resized = await sharp(buffer)
-      .resize({ width: intSize, height: intSize, fit: "inside" })
-      .toBuffer();
+  let contentType = image.type;
+
+  try {
+    if (image.type === "image/gif") {
+      try {
+        resized = await sharp(buffer, { animated: true })
+          .resize({ width: intSize, height: intSize, fit: "inside" })
+          .gif()
+          .toBuffer();
+      } catch {
+        // Animated GIF output not supported; fall back to first-frame WebP
+        resized = await sharp(buffer)
+          .resize({ width: intSize, height: intSize, fit: "inside" })
+          .webp()
+          .toBuffer();
+        contentType = "image/webp";
+      }
+    } else {
+      resized = await sharp(buffer)
+        .resize({ width: intSize, height: intSize, fit: "inside" })
+        .toBuffer();
+    }
+  } catch {
+    return new Response(buffer, {
+      headers: {
+        "Content-Type": image.type,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+    });
   }
 
   return new Response(resized, {
     headers: {
-      "Content-Type": image.type,
+      "Content-Type": contentType,
       "Cache-Control": "public, max-age=31536000, immutable",
     },
   });
