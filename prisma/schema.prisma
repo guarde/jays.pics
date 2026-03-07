@@ -68,6 +68,9 @@ model User {
   ImageArchiveRequest ImageArchiveRequest[]
 
   StorageSubscription StorageSubscription[]
+
+  sent_requests     FriendRequest[] @relation("SentRequests")
+  received_requests FriendRequest[] @relation("ReceivedRequests")
 }
 
 model ReferrerProfile {
@@ -364,4 +367,25 @@ model DiscordProfile {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model FriendRequest {
+  id           String              @unique @default(cuid())
+  requester_id String
+  requester    User                @relation("SentRequests", fields: [requester_id], references: [id])
+  requested_id String
+  requested    User                @relation("ReceivedRequests", fields: [requested_id], references: [id])
+  status       FriendRequestStatus @default(PENDING)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+
+  @@unique([requester_id, requested_id])
+  @@index([requester_id])
+  @@index([requested_id])
 }

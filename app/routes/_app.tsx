@@ -4,6 +4,7 @@ import { Outlet, useLoaderData, useRouteLoaderData } from "@remix-run/react";
 import { DashboardNavbar } from "~/components/dashboard-navbar";
 import { Sidebar } from "~/components/ui/sidebar";
 import { StorageLimitBanner } from "~/components/storage-limit-banner";
+import { prisma } from "~/services/database.server";
 import {
   destroySession,
   getSession,
@@ -43,24 +44,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const now = Date.now();
 
+  const friendRequestCount = await prisma.friendRequest.count({
+    where: { requested_id: user.id, status: "PENDING" },
+  });
+
   return {
     user,
     now,
     version: process.env.VERSION ?? "0.0.0",
     siteName: process.env.SITE_NAME ?? "jays.pics",
+    friendRequestCount,
   };
 }
 
 export default function Application() {
-  const { user, version, siteName } = useLoaderData<typeof loader>();
+  const { user, version, siteName, friendRequestCount } =
+    useLoaderData<typeof loader>();
 
   return (
     <div className="flex h-screen overflow-hidden flex-col md:flex-row">
-      <DashboardNavbar user={user} version={version} siteName={siteName} />
+      <DashboardNavbar
+        user={user}
+        version={version}
+        siteName={siteName}
+        friendRequestCount={friendRequestCount}
+      />
       <Sidebar
         user={user}
         version={version}
         siteName={siteName}
+        friendRequestCount={friendRequestCount}
         className="border-r hidden md:flex"
       />
       <div className="flex-grow rounded w-full h-full overflow-auto">

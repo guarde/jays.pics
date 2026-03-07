@@ -16,12 +16,14 @@ interface DashboardNavbarProps {
   };
   version: string;
   siteName: string;
+  friendRequestCount?: number;
 }
 
 export function DashboardNavbar({
   user,
   version,
   siteName,
+  friendRequestCount = 0,
 }: Readonly<DashboardNavbarProps>) {
   const [open, setOpen] = useState(false);
 
@@ -79,6 +81,7 @@ export function DashboardNavbar({
                 user={user}
                 version={version}
                 siteName={siteName}
+                friendRequestCount={friendRequestCount}
                 className={cn("border-r bg-background h-full")}
               />
             </motion.div>
