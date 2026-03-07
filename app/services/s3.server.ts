@@ -46,10 +46,17 @@ export async function uploadToS3(file: File, filename: string) {
 }
 
 export async function get(key: string) {
-  const res = await fetch(
-    `https://s3.${STORAGE_REGION}.amazonaws.com/${STORAGE_BUCKET}/${key}`,
-  );
-  return await res.blob();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(
+      `https://s3.${STORAGE_REGION}.amazonaws.com/${STORAGE_BUCKET}/${key}`,
+      { signal: controller.signal },
+    );
+    return await res.blob();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function del(key: string) {

@@ -614,13 +614,15 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
     { property: "og:type", content: "website" },
     { property: "og:url", content: `${baseUrl}/i/${imageId}` },
     {
-      // Use a frozen WebP thumbnail for fast social embed loading (avoids
-      // Discord/Telegram timing out on large animated GIFs)
+      // Use thumbnail endpoint for all images — caps size to 1200px so Discord/Facebook
+      // don't reject oversized originals (>8MB), and keeps response time predictable.
       property: "og:image",
       content: isGif
         ? `${baseUrl}/i/${imageId}/thumbnail?size=1200&freeze=1`
-        : `${baseUrl}/i/${imageId}/raw`,
+        : `${baseUrl}/i/${imageId}/thumbnail?size=1200`,
     },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "1200" },
     {
       name: "theme-color",
       content: data.data.uploader?.upload_preferences?.embed_colour,
