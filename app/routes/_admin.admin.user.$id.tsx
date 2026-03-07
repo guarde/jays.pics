@@ -4,8 +4,17 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import { CalendarIcon, MapPin } from "lucide-react";
+import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  ArrowLeft,
+  Globe,
+  Image as ImageIcon,
+  Settings,
+  ShieldAlert,
+  ShieldCheck,
+  Sliders,
+  User,
+} from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import { useState, useEffect } from "react";
 import { z } from "zod";
@@ -147,43 +156,60 @@ export default function AdminProfile() {
     perms.bits.CanUpdatePermissions,
   );
   const targetPerms = BigInt(user.permissions);
+  const badges: { text: string; colour?: string }[] = JSON.parse(
+    user.badges ?? "[]",
+  );
 
   return (
-    <>
-      <Card className="mb-8">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={`/avatar/${id}`} alt={user?.username} />
-              <AvatarFallback>
-                {user?.username.slice(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold">{user?.username}</h1>
-              <p className="text-sm text-muted-foreground">
-                <CalendarIcon className="mr-1 inline-block h-4 w-4" />
-                Joined {new Date(user!.created_at).toLocaleDateString()}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                <MapPin className="mr-1 inline-block h-4 w-4" />
-                Last accessed from{" "}
-                {user.last_login_ip ? user.last_login_ip : "not found"}
-              </p>
-              <div className="mt-2">
-                {JSON.parse(user!.badges).map((badge: { text: string }) => (
-                  <Badge className="mr-2">{badge.text}</Badge>
-                ))}
-              </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <Link
+          to="/admin/users"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          All users
+        </Link>
+        <div className="flex items-center gap-4">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={`/avatar/${id}`} alt={user.username} />
+            <AvatarFallback>
+              {user.username.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-semibold">{user.username}</h1>
+              {user.locked && (
+                <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                  Locked
+                </span>
+              )}
+              {badges.map((badge, idx) => (
+                <Badge
+                  key={idx}
+                  style={{ backgroundColor: badge.colour ?? undefined }}
+                >
+                  {badge.text}
+                </Badge>
+              ))}
             </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Joined {new Date(user.created_at).toLocaleDateString()} · Last IP:{" "}
+              {user.last_login_ip ?? "unknown"}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Permissions Grid */}
-      <Card className="mb-8">
+      {/* Permissions */}
+      <Card>
         <CardHeader>
-          <CardTitle>Permissions</CardTitle>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">Permissions</CardTitle>
+          </div>
           <CardDescription>
             {canUpdatePerms
               ? "Check or uncheck flags to change what this user can do."
@@ -234,213 +260,170 @@ export default function AdminProfile() {
         </CardContent>
       </Card>
 
-      <Card className="mx-auto mb-8">
+      {/* Account Management */}
+      <Card>
         <CardHeader>
-          <CardTitle>Uploader Preferences</CardTitle>
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">Account Management</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-1.5">
+            <Label>Username</Label>
+            <Form method="post" className="flex gap-2">
+              <Input type="hidden" name="type" value="force_username" />
+              <Input
+                name="username"
+                defaultValue={user.username}
+                className="flex-1 h-9"
+              />
+              <Button type="submit" size="sm">
+                Update
+              </Button>
+            </Form>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Badges</Label>
+            {badges.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {badges.map((badge, idx) => (
+                  <Form
+                    method="post"
+                    key={idx}
+                    className="flex items-center gap-1"
+                  >
+                    <Input type="hidden" name="type" value="remove_badge" />
+                    <Input type="hidden" name="index" value={idx.toString()} />
+                    <Badge
+                      style={{ backgroundColor: badge.colour ?? undefined }}
+                    >
+                      {badge.text}
+                    </Badge>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-5 p-0 text-muted-foreground"
+                    >
+                      ✕
+                    </Button>
+                  </Form>
+                ))}
+              </div>
+            )}
+            <Form method="post" className="flex gap-2">
+              <Input type="hidden" name="type" value="add_badge" />
+              <Input name="text" placeholder="Text" className="flex-1 h-9" />
+              <Input name="colour" placeholder="#ffffff" className="w-24 h-9" />
+              <Button type="submit" size="sm">
+                Add
+              </Button>
+            </Form>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Storage Limit</Label>
+            <p className="text-sm text-muted-foreground">
+              {prettyBytes(user.space_used)} used of{" "}
+              {prettyBytes(user.max_space)}
+            </p>
+            <Form method="post" className="flex gap-2">
+              <Input type="hidden" name="type" value="update_space" />
+              <Input
+                name="max_space"
+                type="number"
+                className="w-36 h-9"
+                defaultValue={user.max_space}
+              />
+              <Button type="submit" size="sm">
+                Update
+              </Button>
+            </Form>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Uploader Preferences */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">Uploader Preferences</CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
-          <Form method="post">
-            <Input className="hidden" value={"update_embed"} name="type" />
-            <Label htmlFor="embed_title">Title</Label>
+          <Form method="post" className="space-y-3">
             <Input
-              className="my-2"
-              name="embed_title"
-              defaultValue={user.upload_preferences?.embed_title}
-              list="embed-templates"
-            />
-            <div className="text-red-500 text-sm">
-              {actionData?.fieldErrors.embed_title}
-            </div>
-            <Label htmlFor="embed_author">Author</Label>
-            <Input
-              className="my-2"
-              name="embed_author"
-              defaultValue={user.upload_preferences?.embed_author}
-              list="embed-templates"
-            />
-            <div className="text-red-500 text-sm">
-              {actionData?.fieldErrors.embed_author}
-            </div>
-            <Label htmlFor="embed_colour">Colour</Label>
-            <Input
-              className="my-2"
-              name="embed_colour"
-              defaultValue={user.upload_preferences?.embed_colour}
+              className="hidden"
+              value="update_embed"
+              name="type"
+              readOnly
             />
             <datalist id="embed-templates">
               {templates.map((t) => (
                 <option key={t} value={`{{${t}}}`} />
               ))}
             </datalist>
-            <div className="text-red-500 text-sm">
-              {actionData?.fieldErrors.embed_colour}
+            <div className="space-y-1.5">
+              <Label htmlFor="embed_title">Title</Label>
+              <Input
+                id="embed_title"
+                name="embed_title"
+                defaultValue={user.upload_preferences?.embed_title}
+                list="embed-templates"
+                className="h-9"
+              />
+              {actionData?.fieldErrors.embed_title && (
+                <p className="text-xs text-destructive">
+                  {actionData.fieldErrors.embed_title}
+                </p>
+              )}
             </div>
-            <Button type="submit">Save</Button>
+            <div className="space-y-1.5">
+              <Label htmlFor="embed_author">Author</Label>
+              <Input
+                id="embed_author"
+                name="embed_author"
+                defaultValue={user.upload_preferences?.embed_author}
+                list="embed-templates"
+                className="h-9"
+              />
+              {actionData?.fieldErrors.embed_author && (
+                <p className="text-xs text-destructive">
+                  {actionData.fieldErrors.embed_author}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="embed_colour">Colour</Label>
+              <Input
+                id="embed_colour"
+                name="embed_colour"
+                defaultValue={user.upload_preferences?.embed_colour}
+                className="h-9"
+              />
+              {actionData?.fieldErrors.embed_colour && (
+                <p className="text-xs text-destructive">
+                  {actionData.fieldErrors.embed_colour}
+                </p>
+              )}
+            </div>
+            <Button type="submit" size="sm">
+              Save Preferences
+            </Button>
           </Form>
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      {/* Domain Selection */}
+      <Card>
         <CardHeader>
-          <CardTitle>Account Management</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Form method="post" className="flex gap-2">
-            <Input type="hidden" name="type" value="force_username" />
-            <Input
-              name="username"
-              defaultValue={user.username}
-              className="flex-1"
-            />
-            <Button type="submit">Update Username</Button>
-          </Form>
-
-          <div>
-            <h3 className="font-medium">Tags</h3>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {JSON.parse(user.badges).map((badge: any, idx: number) => (
-                <Form
-                  method="post"
-                  key={idx}
-                  className="flex items-center gap-1"
-                >
-                  <Input type="hidden" name="type" value="remove_badge" />
-                  <Input type="hidden" name="index" value={idx.toString()} />
-                  <Badge
-                    style={{ backgroundColor: badge.colour ?? undefined }}
-                    className="mr-1"
-                  >
-                    {badge.text}
-                  </Badge>
-                  <Button type="submit" size="sm" variant="ghost">
-                    ✕
-                  </Button>
-                </Form>
-              ))}
-            </div>
-            <Form method="post" className="mt-2 flex gap-2">
-              <Input type="hidden" name="type" value="add_badge" />
-              <Input name="text" placeholder="Text" className="flex-1" />
-              <Input name="colour" placeholder="#ffffff" className="w-24" />
-              <Button type="submit" size="sm">
-                Add
-              </Button>
-            </Form>
-            <div className="pt-4">
-              <h3 className="font-medium">Storage Limit</h3>
-              <p className="text-sm text-muted-foreground">
-                {prettyBytes(user.space_used)} used of{" "}
-                {prettyBytes(user.max_space)}
-              </p>
-              <Form method="post" className="mt-2 flex gap-2">
-                <Input type="hidden" name="type" value="update_space" />
-                <Input
-                  name="max_space"
-                  type="number"
-                  className="w-36"
-                  defaultValue={user.max_space}
-                />
-                <Button type="submit" size="sm">
-                  Update
-                </Button>
-              </Form>
-            </div>
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm">Domain Selection</CardTitle>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card className="mb-8 pb-4">
-        <CardHeader>
-          <CardTitle>Images</CardTitle>
-          <CardDescription>Uploaded by this user</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form method="get" className="mb-4 flex items-end gap-2">
-            <Input
-              type="text"
-              name="search"
-              placeholder="Search by name"
-              defaultValue={search}
-            />
-            <Select name="sort" defaultValue={sort}>
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="desc">Most Reports</SelectItem>
-                <SelectItem value="asc">Least Reports</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit">Apply</Button>
-          </Form>
-          {images.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No images uploaded</p>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {images.map((image) => (
-                <Card key={image.id}>
-                  <CardContent className="p-2 space-y-2">
-                    <button
-                      type="button"
-                      onClick={(e) =>
-                        e.currentTarget
-                          .querySelector("img")
-                          ?.classList.toggle("blur-xl")
-                      }
-                      onKeyDown={(e) =>
-                        e.key === "Enter" &&
-                        e.currentTarget
-                          .querySelector("img")
-                          ?.classList.toggle("blur-xl")
-                      }
-                      className="p-0 border-0 bg-transparent"
-                    >
-                      <img
-                        src={`/i/${image.id}/raw`}
-                        alt={image.display_name}
-                        className="aspect-square w-full rounded-md object-cover blur-xl cursor-pointer"
-                      />
-                    </button>
-                    <p className="truncate text-sm font-medium hover:text-primary">
-                      <a href={`/i/${image.id}`}>{image.display_name}</a>
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(image.created_at).toLocaleDateString()}
-                    </p>
-                    <Form method="post">
-                      <Input
-                        type="hidden"
-                        name="type"
-                        value="soft_delete_image"
-                      />
-                      <Input type="hidden" name="image_id" value={image.id} />
-                      <Button
-                        type="submit"
-                        size="sm"
-                        variant="destructive"
-                        className="w-full"
-                      >
-                        Delete
-                      </Button>
-                    </Form>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-        <Pagination
-          path={`/admin/profile/${id}`}
-          currentPage={page}
-          totalCount={imageCount}
-          query={`search=${search}&sort=${sort}`}
-        />
-      </Card>
-
-      {/* Domain management */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Domain Selection</CardTitle>
           <CardDescription>
             Domains this user uploads to. Overrides their own selection.
           </CardDescription>
@@ -448,7 +431,7 @@ export default function AdminProfile() {
         <CardContent>
           <Form method="post" className="space-y-3">
             <Input type="hidden" name="type" value="update_user_domains" />
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {publicDomains.map((d) => {
                 const isSelected = (
                   user.upload_preferences?.urls ?? []
@@ -482,11 +465,110 @@ export default function AdminProfile() {
         </CardContent>
       </Card>
 
-      <Card className="mb-8 border-red-900">
+      {/* Images */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+          <ImageIcon className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold">Images</h2>
+          <span className="ml-1 text-xs bg-secondary text-secondary-foreground rounded-md px-1.5 py-0.5 font-medium">
+            {imageCount}
+          </span>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <Form method="get" className="flex items-center gap-2">
+            <Input
+              type="text"
+              name="search"
+              placeholder="Search by name"
+              defaultValue={search}
+              className="flex-1 h-9"
+            />
+            <Select name="sort" defaultValue={sort}>
+              <SelectTrigger className="w-36 h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Most Reports</SelectItem>
+                <SelectItem value="asc">Least Reports</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button type="submit" size="sm">
+              Apply
+            </Button>
+          </Form>
+          {images.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No images uploaded
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {images.map((image) => (
+                <div
+                  key={image.id}
+                  className="rounded-lg border border-border overflow-hidden"
+                >
+                  <button
+                    type="button"
+                    onClick={(e) =>
+                      e.currentTarget
+                        .querySelector("img")
+                        ?.classList.toggle("blur-xl")
+                    }
+                    className="w-full p-0 border-0 bg-transparent"
+                  >
+                    <img
+                      src={`/i/${image.id}/raw`}
+                      alt={image.display_name}
+                      className="aspect-square w-full object-cover blur-xl cursor-pointer"
+                    />
+                  </button>
+                  <div className="p-2 space-y-1">
+                    <p className="truncate text-xs font-medium">
+                      <Link
+                        to={`/admin/image/${image.id}`}
+                        className="hover:text-primary"
+                      >
+                        {image.display_name}
+                      </Link>
+                    </p>
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(image.created_at).toLocaleDateString()}
+                      </span>
+                      {image._count.ImageReport > 0 && (
+                        <span className="text-xs bg-red-500/10 text-red-400 border border-red-500/20 rounded px-1 py-0.5 shrink-0">
+                          {image._count.ImageReport} report
+                          {image._count.ImageReport !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="px-5 pb-4">
+          <Pagination
+            path={`/admin/user/${id}`}
+            currentPage={page}
+            totalCount={imageCount}
+            query={`search=${search}&sort=${sort}`}
+          />
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <Card className="border-destructive/40">
         <CardHeader>
-          <CardTitle>Danger Zone</CardTitle>
-          <CardDescription className="text-red-700">
-            <i>These actions can be catastrophic</i>
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-destructive" />
+            <CardTitle className="text-sm text-destructive">
+              Danger Zone
+            </CardTitle>
+          </div>
+          <CardDescription>
+            These actions affect this user's account.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-2">
@@ -498,15 +580,15 @@ export default function AdminProfile() {
             />
             <Button
               type="submit"
+              size="sm"
               variant={user.locked ? "outline" : "destructive"}
             >
               {user.locked ? "Unlock Account" : "Lock Account"}
             </Button>
           </Form>
-          <Button variant="destructive">Purge Images</Button>
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
 

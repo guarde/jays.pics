@@ -1,4 +1,5 @@
-import { useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData } from "@remix-run/react";
+import { ExternalLink } from "lucide-react";
 
 import {
   Card,
@@ -21,6 +22,7 @@ export async function loader() {
   const count = await prisma.uRL.count();
   const urls = await prisma.uRL.findMany({
     select: {
+      id: true,
       url: true,
       public: true,
       progress: true,
@@ -38,7 +40,7 @@ export async function loader() {
   return { count, urls };
 }
 
-export default function Users() {
+export default function AdminDomains() {
   const { count, urls } = useLoaderData<typeof loader>();
 
   return (
@@ -51,34 +53,53 @@ export default function Users() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="max-w-96">Domain</TableHead>
-              <TableHead className="max-w-96">Public</TableHead>
-              <TableHead className="max-w-96">Status</TableHead>
-              <TableHead className="max-w-96">Zone</TableHead>
-              <TableHead className="max-w-96">Donator</TableHead>
-              <TableHead className="text-right">Date of Creation</TableHead>
+              <TableHead>Domain</TableHead>
+              <TableHead>Public</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Zone</TableHead>
+              <TableHead>Donator</TableHead>
+              <TableHead className="text-right">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {urls.map((url) => {
-              return (
-                <TableRow>
-                  <TableCell className="font-medium">{url.url}</TableCell>
-                  <TableCell>{url.public ? "Yes" : "No"}</TableCell>
-                  <TableCell>{url.progress}</TableCell>
-                  <TableCell>{url.zone_id}</TableCell>
-                  <TableCell>
-                    <a href={`/admin/profile/${url.donator!.id}`}>
-                      {url.donator!.username}
+            {urls.map((url) => (
+              <TableRow key={url.id}>
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/admin/domain/${url.id}`}
+                      className="font-mono hover:text-primary transition-colors"
+                    >
+                      {url.url}
+                    </Link>
+                    <a
+                      href={`https://${url.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <ExternalLink className="h-3 w-3" />
                     </a>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {new Date(url.created_at).toLocaleDateString()} @
-                    {new Date(url.created_at).toLocaleTimeString()}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                  </div>
+                </TableCell>
+                <TableCell>{url.public ? "Yes" : "No"}</TableCell>
+                <TableCell>{url.progress}</TableCell>
+                <TableCell className="font-mono text-xs">
+                  {url.zone_id || "—"}
+                </TableCell>
+                <TableCell>
+                  <Link
+                    to={`/admin/user/${url.donator!.id}`}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {url.donator!.username}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-right text-sm">
+                  {new Date(url.created_at).toLocaleDateString()}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </CardContent>

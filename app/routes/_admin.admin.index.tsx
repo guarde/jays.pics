@@ -1,8 +1,15 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { Clock, FileChartColumn, FileImage, Users } from "lucide-react";
+import { useLoaderData, useRevalidator } from "@remix-run/react";
+import {
+  Clock,
+  FileChartColumn,
+  FileImage,
+  RefreshCw,
+  Users,
+} from "lucide-react";
 import prettyBytes from "pretty-bytes";
 import prettyMs from "pretty-ms";
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -109,6 +116,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 const COLORS = ["#e05cd9", "#8b5cf6", "#22d3ee", "#16a34a", "#f97316"];
+const TICK_STYLE = { fontSize: 11, fill: "#a1a1aa" };
 
 const chartTooltipStyle = {
   contentStyle: {
@@ -116,8 +124,13 @@ const chartTooltipStyle = {
     border: "1px solid hsl(var(--border))",
     borderRadius: "8px",
     fontSize: "12px",
+    color: "#e4e4e7",
   },
+  itemStyle: { color: "#e4e4e7" },
+  labelStyle: { color: "#a1a1aa" },
 };
+
+const REFRESH_INTERVAL = 30_000;
 
 export default function AdminIndex() {
   const {
@@ -133,15 +146,38 @@ export default function AdminIndex() {
   } = useLoaderData<typeof loader>();
   useAdminLoader();
 
+  const { revalidate, state } = useRevalidator();
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      revalidate();
+      setLastUpdated(new Date());
+    }, REFRESH_INTERVAL);
+    return () => clearInterval(id);
+  }, [revalidate]);
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold">Admin Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Server uptime:{" "}
-          <span className="font-medium text-foreground">{uptime}</span>
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Server uptime:{" "}
+            <span className="font-medium text-foreground">{uptime}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <RefreshCw
+            className={`h-3 w-3 ${state === "loading" ? "animate-spin text-primary" : ""}`}
+          />
+          <span>
+            {state === "loading"
+              ? "Refreshing…"
+              : `Updated ${lastUpdated.toLocaleTimeString()}`}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-8">
@@ -234,10 +270,7 @@ export default function AdminIndex() {
                   <XAxis
                     dataKey="date"
                     tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-                    tick={{
-                      fontSize: 11,
-                      fill: "hsl(var(--muted-foreground))",
-                    }}
+                    tick={TICK_STYLE}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -275,10 +308,7 @@ export default function AdminIndex() {
                   <XAxis
                     dataKey="date"
                     tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-                    tick={{
-                      fontSize: 11,
-                      fill: "hsl(var(--muted-foreground))",
-                    }}
+                    tick={TICK_STYLE}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -307,11 +337,23 @@ export default function AdminIndex() {
                 <PieChart>
                   <Pie
                     dataKey="count"
+                    nameKey="type"
                     data={typeCounts}
                     cx="50%"
                     cy="50%"
                     outerRadius={72}
-                    label={(entry) => entry.type.replace("image/", "")}
+                    label={({ x, y, index }: any) => (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#a1a1aa"
+                        fontSize={11}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                      >
+                        {typeCounts[index]?.type.replace("image/", "")}
+                      </text>
+                    )}
                     labelLine={false}
                   >
                     {typeCounts.map((_, index) => (
@@ -321,7 +363,13 @@ export default function AdminIndex() {
                       />
                     ))}
                   </Pie>
-                  <Tooltip {...chartTooltipStyle} />
+                  <Tooltip
+                    {...chartTooltipStyle}
+                    formatter={(value: number, name: string) => [
+                      value,
+                      name.replace("image/", ""),
+                    ]}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -346,10 +394,7 @@ export default function AdminIndex() {
                   />
                   <XAxis
                     dataKey="username"
-                    tick={{
-                      fontSize: 11,
-                      fill: "hsl(var(--muted-foreground))",
-                    }}
+                    tick={TICK_STYLE}
                     axisLine={false}
                     tickLine={false}
                   />
@@ -386,7 +431,7 @@ export default function AdminIndex() {
                 <XAxis
                   dataKey="date"
                   tickFormatter={(v) => new Date(v).getUTCDate().toString()}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={TICK_STYLE}
                   axisLine={false}
                   tickLine={false}
                 />
