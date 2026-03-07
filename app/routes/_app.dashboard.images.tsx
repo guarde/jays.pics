@@ -31,6 +31,8 @@ import {
   getUserBySession,
 } from "~/services/session.server";
 
+import { useAppLoaderData } from "./_app";
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
 
@@ -106,6 +108,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Images() {
   const { images, clipboard, page, imageCount, search, sort, tags, tag } =
     useLoaderData<typeof loader>();
+  const appData = useAppLoaderData();
+  const gifAutoplay = (appData?.user as any)?.gif_autoplay ?? true;
   const fetcher = useFetcher();
   const { showToast } = useToast();
   const [imageList, setImageList] = useState(images);
@@ -207,7 +211,7 @@ export default function Images() {
                 {/* Thumbnail */}
                 <div className="aspect-square overflow-hidden bg-muted">
                   <img
-                    src={`/i/${image.id}/thumbnail`}
+                    src={`/i/${image.id}/thumbnail${!gifAutoplay && image.type === "image/gif" ? "?freeze=1" : ""}`}
                     alt={image.display_name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />

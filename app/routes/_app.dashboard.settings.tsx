@@ -5,6 +5,7 @@ import {
   Check,
   Container,
   Download,
+  Film,
   Hammer,
   Link as LinkIcon,
   Link2Off,
@@ -88,6 +89,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  if (type === "update_display_settings") {
+    const gif_autoplay = formData.get("gif_autoplay") === "on";
+    await prisma.user.update({
+      where: { id: user!.id },
+      data: { gif_autoplay },
+    });
+    updated = true;
+  }
+
   if (type === "update_discord_settings") {
     const use_avatar = formData.get("use_avatar") === "on";
     const use_banner = formData.get("use_banner") === "on";
@@ -161,6 +171,7 @@ export default function Settings() {
   const avatarFetcher = useFetcher();
   const usernameFetcher = useFetcher();
   const discordFetcher = useFetcher();
+  const displayFetcher = useFetcher();
   const purgeFetcher = useFetcher();
   const deleteFetcher = useFetcher();
   const { showToast } = useToast();
@@ -373,6 +384,45 @@ export default function Settings() {
                       ))}
                   </usernameFetcher.Form>
                 </div>
+              </div>
+            </div>
+
+            {/* Display Preferences */}
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="flex items-center gap-2 px-5 py-4 border-b border-border">
+                <Film className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Display Preferences</h3>
+              </div>
+              <div className="p-5">
+                <displayFetcher.Form
+                  method="post"
+                  onSubmit={(e) => {
+                    const fd = new FormData(e.currentTarget);
+                    displayFetcher.submit(fd, { method: "post" });
+                    showToast("Display preferences saved", "success");
+                    e.preventDefault();
+                  }}
+                >
+                  <input
+                    type="hidden"
+                    name="type"
+                    value="update_display_settings"
+                  />
+                  <div className="space-y-0">
+                    <ToggleRow
+                      id="gif_autoplay"
+                      name="gif_autoplay"
+                      label="Autoplay GIFs"
+                      description="When disabled, GIFs show a static preview and play only when clicked. Reduces bandwidth usage."
+                      defaultChecked={data.user.gif_autoplay ?? true}
+                    />
+                  </div>
+                  <div className="pt-4">
+                    <Button type="submit" size="sm" variant="outline">
+                      Save Display Settings
+                    </Button>
+                  </div>
+                </displayFetcher.Form>
               </div>
             </div>
 

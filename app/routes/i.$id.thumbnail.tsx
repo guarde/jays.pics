@@ -13,10 +13,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!user) return new Response("Not found", { status: 404 });
 
   const url = new URL(request.url);
-  let size = url.searchParams.get("size");
-  if (!size) size = "256";
-
-  const intSize = parseInt(size);
+  const size = parseInt(url.searchParams.get("size") ?? "256");
+  const freeze = url.searchParams.get("freeze") === "1";
 
   const data = await get(`${user.id}/${image.id}`);
   const arrayBuffer = await data.arrayBuffer();
@@ -26,23 +24,31 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   let contentType = image.type;
 
   try {
-    if (image.type === "image/gif") {
+    if (image.type === "image/gif" && !freeze) {
+      // Animated GIF thumbnail — try to preserve animation
       try {
         resized = await sharp(buffer, { animated: true })
-          .resize({ width: intSize, height: intSize, fit: "inside" })
+          .resize({ width: size, height: size, fit: "inside" })
           .gif()
           .toBuffer();
       } catch {
-        // Animated GIF output not supported; fall back to first-frame WebP
+        // Animated output not supported by this build; fall back to first frame
         resized = await sharp(buffer)
-          .resize({ width: intSize, height: intSize, fit: "inside" })
+          .resize({ width: size, height: size, fit: "inside" })
           .webp()
           .toBuffer();
         contentType = "image/webp";
       }
+    } else if (image.type === "image/gif" && freeze) {
+      // Freeze: return first frame as static WebP
+      resized = await sharp(buffer)
+        .resize({ width: size, height: size, fit: "inside" })
+        .webp()
+        .toBuffer();
+      contentType = "image/webp";
     } else {
       resized = await sharp(buffer)
-        .resize({ width: intSize, height: intSize, fit: "inside" })
+        .resize({ width: size, height: size, fit: "inside" })
         .toBuffer();
     }
   } catch {
