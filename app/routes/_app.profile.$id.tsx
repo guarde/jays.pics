@@ -6,7 +6,17 @@ import {
   redirect,
 } from "@remix-run/node";
 import { Form, useLoaderData, useFetcher } from "@remix-run/react";
-import { Calendar, ImageIcon, MessageCircle, Users, X } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  ImageIcon,
+  MessageCircle,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "~/components/confirm-dialog";
@@ -91,7 +101,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
   });
 
-  return json({ user, viewer, referrals, images, pinnedImages, comments });
+  let friendStatus: {
+    status: string;
+    direction: "sent" | "received";
+    requestId: string;
+  } | null = null;
+
+  if (viewer.id && viewer.id !== user.id) {
+    const friendRequest = await prisma.friendRequest.findFirst({
+      where: {
+        OR: [
+          { requester_id: viewer.id, requested_id: user.id },
+          { requester_id: user.id, requested_id: viewer.id },
+        ],
+      },
+    });
+    if (friendRequest) {
+      friendStatus = {
+        status: friendRequest.status,
+        direction:
+          friendRequest.requester_id === viewer.id ? "sent" : "received",
+        requestId: friendRequest.id,
+      };
+    }
+  }
+
+  const friendCount = await prisma.friendRequest.count({
+    where: {
+      OR: [
+        { requester_id: user.id, status: "ACCEPTED" },
+        { requested_id: user.id, status: "ACCEPTED" },
+      ],
+    },
+  });
+
+  return json({
+    user,
+    viewer,
+    referrals,
+    images,
+    pinnedImages,
+    comments,
+    friendStatus,
+    friendCount,
+  });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -203,6 +256,71 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  if (type === "send_friend_request" && viewer!.id !== profileUser.id) {
+    const existing = await prisma.friendRequest.findFirst({
+      where: {
+        OR: [
+          { requester_id: viewer!.id, requested_id: profileUser.id },
+          { requester_id: profileUser.id, requested_id: viewer!.id },
+        ],
+      },
+    });
+    if (!existing) {
+      await prisma.friendRequest.create({
+        data: { requester_id: viewer!.id, requested_id: profileUser.id },
+      });
+      await prisma.notification.create({
+        data: {
+          receiver_id: profileUser.id,
+          content: `${viewer!.username} sent you a friend request.`,
+        },
+      });
+    }
+  }
+
+  if (type === "accept_friend_request") {
+    const requestId = formData.get("request_id") as string;
+    const req = await prisma.friendRequest.findFirst({
+      where: { id: requestId, requested_id: viewer!.id, status: "PENDING" },
+    });
+    if (req) {
+      await prisma.friendRequest.update({
+        where: { id: requestId },
+        data: { status: "ACCEPTED" },
+      });
+      await prisma.notification.create({
+        data: {
+          receiver_id: req.requester_id,
+          content: `${viewer!.username} accepted your friend request.`,
+        },
+      });
+    }
+  }
+
+  if (type === "decline_friend_request") {
+    const requestId = formData.get("request_id") as string;
+    await prisma.friendRequest.deleteMany({
+      where: { id: requestId, requested_id: viewer!.id },
+    });
+  }
+
+  if (type === "cancel_friend_request") {
+    const requestId = formData.get("request_id") as string;
+    await prisma.friendRequest.deleteMany({
+      where: { id: requestId, requester_id: viewer!.id },
+    });
+  }
+
+  if (type === "remove_friend") {
+    const requestId = formData.get("request_id") as string;
+    await prisma.friendRequest.deleteMany({
+      where: {
+        id: requestId,
+        OR: [{ requester_id: viewer!.id }, { requested_id: viewer!.id }],
+      },
+    });
+  }
+
   const accept = request.headers.get("Accept") || "";
   if (accept.includes("application/json")) {
     return json({ ok: true });
@@ -224,8 +342,16 @@ function DiscordIcon({ className }: { className?: string }) {
 }
 
 export default function Profile() {
-  const { user, viewer, referrals, images, comments, pinnedImages } =
-    useLoaderData<typeof loader>();
+  const {
+    user,
+    viewer,
+    referrals,
+    images,
+    comments,
+    pinnedImages,
+    friendStatus,
+    friendCount,
+  } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const { showToast } = useToast();
   const [commentList, setCommentList] = useState(comments);
@@ -317,6 +443,102 @@ export default function Profile() {
                 </span>
               )}
             </div>
+            {/* Friend action buttons */}
+            {isLoggedIn && !isOwner && (
+              <div className="mt-3 flex items-center gap-2">
+                {!friendStatus && (
+                  <Form method="POST">
+                    <input
+                      type="hidden"
+                      name="type"
+                      value="send_friend_request"
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="gap-1.5 text-white"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      Add Friend
+                    </Button>
+                  </Form>
+                )}
+                {friendStatus?.status === "PENDING" &&
+                  friendStatus.direction === "sent" && (
+                    <Form method="POST">
+                      <input
+                        type="hidden"
+                        name="type"
+                        value="cancel_friend_request"
+                      />
+                      <input
+                        type="hidden"
+                        name="request_id"
+                        value={friendStatus.requestId}
+                      />
+                      <Button
+                        type="submit"
+                        size="sm"
+                        variant="secondary"
+                        className="gap-1.5"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Request Sent
+                      </Button>
+                    </Form>
+                  )}
+                {friendStatus?.status === "PENDING" &&
+                  friendStatus.direction === "received" && (
+                    <Form method="POST" className="flex gap-2">
+                      <input
+                        type="hidden"
+                        name="request_id"
+                        value={friendStatus.requestId}
+                      />
+                      <Button
+                        type="submit"
+                        name="type"
+                        value="accept_friend_request"
+                        size="sm"
+                        className="gap-1.5 text-white"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        Accept
+                      </Button>
+                      <Button
+                        type="submit"
+                        name="type"
+                        value="decline_friend_request"
+                        size="sm"
+                        variant="ghost"
+                        className="gap-1.5"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                        Decline
+                      </Button>
+                    </Form>
+                  )}
+                {friendStatus?.status === "ACCEPTED" && (
+                  <Form method="POST">
+                    <input type="hidden" name="type" value="remove_friend" />
+                    <input
+                      type="hidden"
+                      name="request_id"
+                      value={friendStatus.requestId}
+                    />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="secondary"
+                      className="gap-1.5"
+                    >
+                      <UserMinus className="h-3.5 w-3.5" />
+                      Friends
+                    </Button>
+                  </Form>
+                )}
+              </div>
+            )}
           </div>
           {badges.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
@@ -361,6 +583,12 @@ export default function Profile() {
                   <span>
                     {referrals.length} referral
                     {referrals.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <UserCheck className="h-4 w-4 text-primary/70 shrink-0" />
+                  <span>
+                    {friendCount} friend{friendCount !== 1 ? "s" : ""}
                   </span>
                 </div>
                 {discord?.display_public && (

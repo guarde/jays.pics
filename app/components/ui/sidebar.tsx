@@ -16,6 +16,7 @@ import {
   SquareUser,
   TableProperties,
   Upload,
+  Users,
   WandSparkles,
   Wrench,
 } from "lucide-react";
@@ -41,6 +42,7 @@ interface SidebarProps {
   };
   version: string;
   siteName: string;
+  friendRequestCount?: number;
   onLinkClick?: () => void;
 }
 
@@ -86,11 +88,13 @@ export function Sidebar({
   user,
   version,
   siteName,
+  friendRequestCount = 0,
   onLinkClick,
 }: Readonly<SidebarProps>) {
   const [showTray, setShowTray] = useState(false);
   const [notifications, setNotifications] = useState(user.notifications ?? []);
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showSocialMenu, setShowSocialMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const removeNotification = (id: string) =>
@@ -185,6 +189,41 @@ export function Sidebar({
           >
             Help
           </NavItem>
+        </div>
+
+        {/* Social section */}
+        <div className="space-y-0.5">
+          <button
+            type="button"
+            onClick={() => setShowSocialMenu(!showSocialMenu)}
+            className="flex items-center gap-3 px-3 py-1.5 w-full text-xs font-semibold text-muted-foreground/60 hover:text-muted-foreground uppercase tracking-wider transition-colors"
+          >
+            <Users className="h-3 w-3 shrink-0" />
+            <span className="flex-1 text-left">Social</span>
+            {friendRequestCount > 0 && !showSocialMenu && (
+              <span className="bg-primary/10 text-primary rounded-md px-1.5 py-0.5 text-xs font-medium normal-case tracking-normal">
+                {friendRequestCount}
+              </span>
+            )}
+            <ChevronDown
+              className={cn(
+                "h-3 w-3 shrink-0 transition-transform duration-200",
+                showSocialMenu && "rotate-180",
+              )}
+            />
+          </button>
+          {showSocialMenu && (
+            <div className="space-y-0.5">
+              <NavItem
+                to="/dashboard/friends"
+                icon={Users}
+                onClick={onLinkClick}
+                badge={friendRequestCount > 0 ? friendRequestCount : undefined}
+              >
+                Friends
+              </NavItem>
+            </div>
+          )}
         </div>
 
         {/* Upload Config section */}
