@@ -93,6 +93,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       permissions: "0",
       notifications: [],
       images: [],
+      gif_autoplay: true,
     };
   }
 
@@ -231,6 +232,9 @@ export default function ImagePage() {
   const fetcher = useFetcher();
   const { showToast } = useToast();
   const [commentList, setCommentList] = useState(comments);
+  const gifAutoplay = (user as any).gif_autoplay ?? true;
+  const isGif = data.image.type === "image/gif";
+  const [gifPlaying, setGifPlaying] = useState(gifAutoplay);
 
   const isOwner = user!.id === data.image.uploader_id;
   const isLoggedIn = user!.id !== "";
@@ -258,12 +262,32 @@ export default function ImagePage() {
       {/* Main layout */}
       <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         {/* Image area — dark background makes any image pop */}
-        <div className="flex-1 flex items-center justify-center bg-zinc-950 min-h-[40vh] lg:min-h-0 overflow-hidden">
-          <img
-            src={`/i/${data.image.id}/raw`}
-            alt={data.image.display_name}
-            className="max-h-full max-w-full object-contain drop-shadow-2xl"
-          />
+        <div className="flex-1 flex items-center justify-center bg-zinc-950 min-h-[40vh] lg:min-h-0 overflow-hidden relative">
+          {isGif && !gifPlaying ? (
+            <button
+              type="button"
+              onClick={() => setGifPlaying(true)}
+              className="relative flex items-center justify-center group"
+              title="Click to play GIF"
+            >
+              <img
+                src={`/i/${data.image.id}/thumbnail?size=1200&freeze=1`}
+                alt={data.image.display_name}
+                className="max-h-full max-w-full object-contain drop-shadow-2xl"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="bg-black/60 rounded-full px-4 py-2 text-white text-sm font-medium group-hover:bg-black/80 transition-colors">
+                  ▶ Play GIF
+                </div>
+              </div>
+            </button>
+          ) : (
+            <img
+              src={`/i/${data.image.id}/raw`}
+              alt={data.image.display_name}
+              className="max-h-full max-w-full object-contain drop-shadow-2xl"
+            />
+          )}
         </div>
 
         {/* Info panel */}
@@ -579,18 +603,23 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
   );
   const ogTitle = titleTemplate || data.data.image?.display_name || "";
 
-  return [
+  const isGif = data.data.image?.type === "image/gif";
+  const imageId = data.data.image?.id;
+  const baseUrl = `https://${baseDomain}`;
+
+  const tags: ReturnType<MetaFunction> = [
     { title: data.data.image?.display_name },
     { property: "og:title", content: ogTitle },
     { property: "og:description", content: "" },
     { property: "og:type", content: "website" },
+    { property: "og:url", content: `${baseUrl}/i/${imageId}` },
     {
-      property: "og:url",
-      content: `https://webp.gay/i/${data.data.image?.id}`,
-    },
-    {
+      // Use a frozen WebP thumbnail for fast social embed loading (avoids
+      // Discord/Telegram timing out on large animated GIFs)
       property: "og:image",
-      content: `https://webp.gay/i/${data.data.image?.id}/raw${data.data.image.type === "image/gif" ? ".gif" : ""}`,
+      content: isGif
+        ? `${baseUrl}/i/${imageId}/thumbnail?size=1200&freeze=1`
+        : `${baseUrl}/i/${imageId}/raw`,
     },
     {
       name: "theme-color",
@@ -600,8 +629,18 @@ export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
       tagName: "link",
       rel: "alternate",
       type: "application/json+oembed",
-      href: `https://webp.gay/i/${data.data.image!.id}/oembed.json`,
+      href: `${baseUrl}/i/${imageId}/oembed.json`,
     },
     { name: "twitter:card", content: "summary_large_image" },
   ];
+
+  // For GIFs: add og:video so Discord can play the animation inline
+  if (isGif) {
+    tags.push(
+      { property: "og:video", content: `${baseUrl}/i/${imageId}/raw.gif` },
+      { property: "og:video:type", content: "image/gif" },
+    );
+  }
+
+  return tags;
 };

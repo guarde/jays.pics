@@ -42,6 +42,7 @@ export async function getUserBySession(session: Session) {
       discord_pending: true,
       discord_profile: true,
       StorageSubscription: true,
+      gif_autoplay: true,
       notifications: {
         where: {
           seen: false,

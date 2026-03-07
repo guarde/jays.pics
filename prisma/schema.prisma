@@ -43,6 +43,8 @@ model User {
 
   last_login_ip String?
 
+  gif_autoplay Boolean @default(true)
+
   comments       Comment[]
   image_comments ImageComment[]
 
